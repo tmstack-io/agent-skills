@@ -5,8 +5,9 @@
 ## 使い方（新しいマシンでの展開）
 
 ```sh
-git clone <このリポジトリ> ~/Development/repos/agent-skills
-for s in ~/Development/repos/agent-skills/*/; do
+git clone <このリポジトリ> <任意のパス>
+cd <任意のパス>
+for s in "$PWD"/*/; do
   ln -s "${s%/}" ~/.claude/skills/"$(basename "$s")"
 done
 ```
