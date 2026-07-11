@@ -18,6 +18,11 @@ disable-model-invocation: true
 > 暴発防止のため **ユーザー起動専用**（`disable-model-invocation: true`）。
 > 即実行を止めるのは、前提チェック / ブランチ規約違反 / secret・大容量検出 /
 > 低信頼確認 / 検証失敗 の各安全策だけ。
+>
+> **明示起動の確認**: ユーザーがこのスキルを名指しで起動した場合のみ実行する。
+> 文脈からの自動適用で読み込まれた場合は、実行せずユーザーに起動意思を確認する。
+> `disable-model-invocation` を解釈しない実行環境では、この確認が唯一の暴発防止と
+> なる（起動＝コミット実行のため、確認なしの発火は実害が出る）。
 
 引数は取らない。対象は常に「現在のリポジトリの未コミット変更」の全部
 （範囲は `git add -A` 相当 = 未追跡を含む・`.gitignore` は尊重。ただし実際のステージは
@@ -62,8 +67,10 @@ disable-model-invocation: true
 （ルール検出に依存しない機械的な判定のみ。ブランチ規約の判定は [2] で行う。）
 
 - **git リポジトリでない**: `git rev-parse --git-dir` が失敗。
-- **作業進行中**: `.git/MERGE_HEAD` / `.git/rebase-merge` / `.git/rebase-apply` /
-  `.git/CHERRY_PICK_HEAD` / `.git/REVERT_HEAD` のいずれかが存在 → 「○○ 進行中のため中断」。
+- **作業進行中**: `$(git rev-parse --git-dir)` 配下に `MERGE_HEAD` / `rebase-merge` /
+  `rebase-apply` / `CHERRY_PICK_HEAD` / `REVERT_HEAD` のいずれかが存在 →
+  「○○ 進行中のため中断」。基準パスは必ず `git rev-parse --git-dir` の結果を使う
+  （linked worktree ではこれらが `.git/` 直下に無く、固定パス判定では素通りするため）。
 - **detached HEAD**: `git symbolic-ref -q HEAD` が失敗。
 - **submodule 内部に未コミット変更がある**（`git status --porcelain
   --ignore-submodules=none` で modified content が見える）→ submodule 内部の変更は
@@ -71,6 +78,15 @@ disable-model-invocation: true
   前進）だけなら通常の変更として続行してよい。
 - **変更なし**: ステージ・未ステージ・未追跡のいずれにも対象が無い →
   「コミット対象なし」とだけ報告。
+- **前提スキル clarify-ja が見つからない**: 本スキルは [5] の日本語メッセージ整形で
+  同梱スキル clarify-ja に依存する。次の順で `clarify-ja/SKILL.md` を探す —
+  (1) 本スキルの隣（`../clarify-ja/SKILL.md`）、(2) 実行エージェント自身の
+  スキルディレクトリのプロジェクト側 → グローバル側（Claude Code: `.claude/skills/` →
+  `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.codex/skills/`。他のエージェントも
+  自身の2箇所を同順。他エージェント用のディレクトリは探さない）。どこにも無ければ
+  コミットを一切作らず中断し、復旧手順を案内する（agent-skills リポジトリ
+  `tmstack-io/agent-skills` から clarify-ja を導入して再実行。
+  例: `npx skills add tmstack-io/agent-skills --skill clarify-ja`）。
 
 ---
 
@@ -83,7 +99,8 @@ disable-model-invocation: true
    - コミット関連記述とブランチ関連記述を両方読む。例: 使用言語、prefix 規約、
      署名の可否、本文の書き方、コミット実行ポリシー、ブランチ運用（命名規約・
      base ブランチ・直コミット禁止など）。
-2. **ユーザーグローバル `~/.claude/CLAUDE.md`** の同種記述。
+2. **実行環境のユーザーグローバル設定**（Claude Code: `~/.claude/CLAUDE.md`、
+   Codex: `~/.codex/AGENTS.md` 等、実行環境が読み込むグローバル指示ファイル）の同種記述。
    - 同一側面で 1 と矛盾する場合は **リポジトリ側が勝つ**（より局所的なルール優先）。
 3. **設定ファイル**: `.gitmessage`、`commitlint.config.*` / `.commitlintrc*`、
    `package.json` の commitlint 設定、Conventional Commits 系設定。あれば**厳密に**従う。
@@ -99,7 +116,7 @@ disable-model-invocation: true
   通常どおり最優先で適用する）。
 - **規約が外部情報を要求する場合**（Issue 番号・チケット ID 等、変更内容から導けない
   情報が件名・本文に必須のとき）: まず現在のブランチ名から推定する
-  （例: `feature/123-...` / `issue-123` / `CAITSITH-123`）。確実に導けなければ
+  （例: `feature/123-...` / `issue-123` / `PROJ-123`）。確実に導けなければ
   **捏造せず**、低信頼扱い（[4] の基準 4）としてユーザーに確認する。
 
 **有効ルールセットに必ず含める要素**: 言語 / prefix 方式 / 件名の語調・長さ / 本文の方針 /
@@ -182,8 +199,10 @@ disable-model-invocation: true
   並べ立てる本文にはしない。
 - **署名は既定で付けない**（Co-Authored-By / Generated with 等）。ルールが明示的に要求
   する場合のみ付ける。
-- **日本語メッセージの整形**: `~/.claude/skills/clarify-ja/SKILL.md` の規則を読み込み、
-  **このコンテキスト内で適用**する（Skill ツール経由の別呼び出しではない）。ただし:
+- **日本語メッセージの整形**: [0] で解決した `clarify-ja/SKILL.md` の**既定モード
+  （意味厳守）**の規則を読み込み、**このコンテキスト内で適用**する（別プロセス・
+  別呼び出しにはしない。`--plain` 節は適用しない — 読者適応の詳細 drop で
+  コミット本文の情報が落ちるため）。ただし:
   - **整形対象は本文のみ。件名は整形しない**（prefix・形式・長さ・1 行制約を崩さない
     ため）。
   - clarify-ja 手順にある文体確認の質問は行わず、有効ルールセット（無ければ既存ログ）
