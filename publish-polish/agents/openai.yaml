@@ -1,0 +1,3 @@
+interface:
+  display_name: "Publish Polish"
+  short_description: "文書・コメントを公開品質へ整形"

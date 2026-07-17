@@ -1,0 +1,3 @@
+interface:
+  display_name: "Session to Prompt"
+  short_description: "セッションの決定事項から実装プロンプトを生成"
