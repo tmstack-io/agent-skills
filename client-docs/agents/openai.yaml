@@ -1,0 +1,3 @@
+interface:
+  display_name: "Client Docs"
+  short_description: "クライアント提出資料を生成"

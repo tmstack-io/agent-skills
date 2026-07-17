@@ -1,0 +1,3 @@
+interface:
+  display_name: "Impact Investigation"
+  short_description: "指摘・CVE 起点の影響範囲調査レポート"

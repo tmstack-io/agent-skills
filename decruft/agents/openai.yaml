@@ -1,0 +1,3 @@
+interface:
+  display_name: "Decruft"
+  short_description: "成果物に不要な記述を検出・削除"

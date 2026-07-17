@@ -1,0 +1,5 @@
+interface:
+  display_name: "Smart Commit"
+  short_description: "変更を論理単位の atomic コミットへ分割"
+policy:
+  allow_implicit_invocation: false
