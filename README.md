@@ -45,6 +45,7 @@ npx skills add tmstack-io/agent-skills --skill clarify-ja   # 単体指定
 | publish-polish | 公開予定のドキュメント・コードコメントを初見の読者に成立する公開品質へ書き換え（漏えい疑いは警告のみ。`--style` で文体・体裁・構成の磨き込みも提案） |
 | session-to-prompt | セッションの決定事項から宛先別の自己完結実装プロンプトを生成 |
 | skill-refine | 既存スキルの査読→承認→洗練を行うメタスキル（craft 基準は writing-great-skills（`mattpocock/skills`）を正本として適用。既定は汎用スキル基準。`--myself` で実行エージェント専用基準、`--project` でプロジェクト専用基準に切り替え） |
+| slack-research | プロジェクトに紐づく Slack ワークスペースの読み取り専用調査（`.slack-research-env` の User Token で curl から Web API を直接呼ぶ。MCP 不要・複数ワークスペースはプロジェクト毎のトークンで切り替え） |
 | smart-commit | 未コミット変更を論理単位の atomic コミットへ自動分割・登録（規約検出・単位ごと軽量検証つき） |
 
 ## スキル間の依存
