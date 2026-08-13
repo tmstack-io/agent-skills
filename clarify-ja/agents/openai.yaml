@@ -1,5 +1,0 @@
-interface:
-  display_name: "Clarify JA"
-  short_description: "難解な日本語を平易にリライト"
-policy:
-  allow_implicit_invocation: false

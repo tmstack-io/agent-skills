@@ -1,0 +1,5 @@
+interface:
+  display_name: "Plainify"
+  short_description: "難解な日本語を指定読者向けに平易化リライト"
+policy:
+  allow_implicit_invocation: false

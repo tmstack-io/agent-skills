@@ -48,7 +48,7 @@ disable-model-invocation: true
         ▼
 [4] 分割プラン作成 ＋ 低信頼判定 ─ 低信頼なら人間に確認
         ▼
-[5] コミットメッセージ生成（日本語は本文のみ clarify-ja 整形）
+[5] コミットメッセージ生成（日本語は本文のみ plainify 整形）
         ▼
 [6] 分割プランのログ表示（コミット直前）
         ▼
@@ -78,15 +78,15 @@ disable-model-invocation: true
   前進）だけなら通常の変更として続行してよい。
 - **変更なし**: ステージ・未ステージ・未追跡のいずれにも対象が無い →
   「コミット対象なし」とだけ報告。
-- **前提スキル clarify-ja が見つからない**: 本スキルは [5] の日本語メッセージ整形で
-  同梱スキル clarify-ja に依存する。次の順で `clarify-ja/SKILL.md` を探す —
-  (1) 本スキルの隣（`../clarify-ja/SKILL.md`）、(2) 実行エージェント自身の
+- **前提スキル plainify が見つからない**: 本スキルは [5] の日本語メッセージ整形で
+  同梱スキル plainify に依存する。次の順で `plainify/SKILL.md` を探す —
+  (1) 本スキルの隣（`../plainify/SKILL.md`）、(2) 実行エージェント自身の
   スキルディレクトリのプロジェクト側 → グローバル側（Claude Code: `.claude/skills/` →
   `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.codex/skills/`。他のエージェントも
   自身の2箇所を同順。他エージェント用のディレクトリは探さない）。どこにも無ければ
   コミットを一切作らず中断し、復旧手順を案内する（agent-skills リポジトリ
-  `tmstack-io/agent-skills` から clarify-ja を導入して再実行。
-  例: `npx skills add tmstack-io/agent-skills --skill clarify-ja`）。
+  `tmstack-io/agent-skills` から plainify を導入して再実行。
+  例: `npx skills add tmstack-io/agent-skills --skill plainify`）。
 
 ---
 
@@ -199,13 +199,13 @@ disable-model-invocation: true
   並べ立てる本文にはしない。
 - **署名は既定で付けない**（Co-Authored-By / Generated with 等）。ルールが明示的に要求
   する場合のみ付ける。
-- **日本語メッセージの整形**: [0] で解決した `clarify-ja/SKILL.md` の**既定モード
+- **日本語メッセージの整形**: [0] で解決した `plainify/SKILL.md` の**既定モード
   （意味厳守）**の規則を読み込み、**このコンテキスト内で適用**する（別プロセス・
-  別呼び出しにはしない。`--plain` 節は適用しない — 読者適応の詳細 drop で
+  別呼び出しにはしない。`--for` モードの節は適用しない — 読者適応の詳細 drop で
   コミット本文の情報が落ちるため）。ただし:
   - **整形対象は本文のみ。件名は整形しない**（prefix・形式・長さ・1 行制約を崩さない
     ため）。
-  - clarify-ja 手順にある文体確認の質問は行わず、有効ルールセット（無ければ既存ログ）
+  - plainify 手順にある文体確認の質問は行わず、有効ルールセット（無ければ既存ログ）
     の語調に合わせる。
   - 有効ルールセットの言語が日本語でない場合は整形しない。
 
