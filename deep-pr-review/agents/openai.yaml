@@ -1,0 +1,5 @@
+interface:
+  display_name: "Deep PR Review"
+  short_description: "GitHub PR の多角レビュー（多エージェント＋外部ハーネス＋メタ検証を統合レビュー1本に集約）"
+policy:
+  allow_implicit_invocation: false
