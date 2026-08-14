@@ -1,0 +1,5 @@
+interface:
+  display_name: "Maestro"
+  short_description: "実行エージェントを非実装の指揮者に固定し実装・調査を奏者へ委譲するセッションモード"
+policy:
+  allow_implicit_invocation: false

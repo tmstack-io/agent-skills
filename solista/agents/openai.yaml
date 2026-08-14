@@ -1,0 +1,5 @@
+interface:
+  display_name: "Solista"
+  short_description: "指定ロールを単独の奏者に配役するセッションモード（編成1の concertino）"
+policy:
+  allow_implicit_invocation: false
