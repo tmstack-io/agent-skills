@@ -1,0 +1,5 @@
+interface:
+  display_name: "Roundtable"
+  short_description: "異系統の3 LLM による円卓会議で主題を合議し最終回答に統合"
+policy:
+  allow_implicit_invocation: false
