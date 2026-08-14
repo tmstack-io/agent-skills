@@ -42,6 +42,7 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 | impact-investigation | CVE・指摘・バグ報告起点の影響範囲調査レポート生成（調査と修正を分離。`--for <読者>` で指定読者向けの平易な日本語に） |
 | plainify | AI 生成の難解な日本語を平易化する事後リライト（日本語専用。既定は意味厳守、`--for <読者>` で指定読者への読者適応。GitHub PR / issue も入力可） |
 | publish-polish | 公開予定のドキュメント・コードコメントを初見の読者に成立する公開品質へ書き換え（漏えい疑いは警告のみ。`--style` で文体・体裁・構成の磨き込みも提案） |
+| roundtable | 与えられた合議の主題を異系統の3 LLM（議長系統の host 固定席＋起動ごとに選ぶ2席）で合議し、最終回答に統合する円卓会議（TUI マルチプレクサ環境専用。議事録を `.roundtable/` に永続保存） |
 | session-to-prompt | セッションの決定事項から宛先別の自己完結実装プロンプトを生成 |
 | skill-refine | 既存スキルの査読→承認→洗練を行うメタスキル（craft 基準は writing-great-skills（`mattpocock/skills`）を正本として適用。既定は汎用スキル基準。`--myself` で実行エージェント専用基準、`--project` でプロジェクト専用基準に切り替え） |
 | slack-research | プロジェクトに紐づく Slack ワークスペースの読み取り専用調査（`.slack-research-env` の User Token で curl から Web API を直接呼ぶ。MCP 不要・複数ワークスペースはプロジェクト毎のトークンで切り替え） |
@@ -50,4 +51,4 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 
 ## スキル間の依存
 
-smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。[claude-skills](https://github.com/tmstack-io/claude-skills)（別リポジトリ）の deep-pr-review も本リポジトリの plainify に依存し、同リポジトリの roundtable / concertino / deep-pr-review は本リポジトリの tui-harness に依存する。各スキルは実行前に依存先を「自スキルの隣 → 実行エージェント自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
+smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。roundtable は tui-harness に依存し（必須）、最終提示後の実装プロンプト書き出し（求められた場合のみ）に session-to-prompt を使う。[claude-skills](https://github.com/tmstack-io/claude-skills)（別リポジトリ）の deep-pr-review も本リポジトリの plainify に依存し、同リポジトリの concertino / deep-pr-review は本リポジトリの tui-harness に依存する。各スキルは実行前に依存先を「自スキルの隣 → 実行エージェント自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
