@@ -1,0 +1,5 @@
+interface:
+  display_name: "Concertino"
+  short_description: "指定ロールを複数ハーネス奏者の編成（合計4まで）に配役するセッションモード"
+policy:
+  allow_implicit_invocation: false
