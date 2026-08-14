@@ -85,9 +85,9 @@ PR へのコメント投稿は本スキルの責務外である（同一リポ�
 
 1. **前提スキル plainify と同梱 verbatim-inputs.md の存在チェック**。本スキルはフェーズ5の明快化で
    agent-skills リポジトリの plainify に依存する。次の順で `plainify/SKILL.md` を探す —
-   (1) 本スキルの隣（`../plainify/SKILL.md`）、(2) 実行エージェント自身のスキルディレクトリを
+   (1) 本スキルの隣（`../plainify/SKILL.md`）、(2) 実行ハーネス自身のスキルディレクトリを
    プロジェクト側 → グローバル側の順（Claude Code: `.claude/skills/` → `~/.claude/skills/`、
-   Codex: `.agents/skills/` → `~/.codex/skills/`。他エージェント用のディレクトリは探さない）。
+   Codex: `.agents/skills/` → `~/.codex/skills/`。他ハーネス用のディレクトリは探さない）。
    どこにも無ければ**レビューを開始せずに中止**し、復旧手順を案内する
    （agent-skills リポジトリ `tmstack-io/agent-skills` から plainify を導入して再実行。
    例: `npx skills add tmstack-io/agent-skills --skill plainify`）。

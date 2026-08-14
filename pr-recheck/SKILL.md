@@ -52,7 +52,7 @@ deep-pr-review（生成）・pr-comment（投稿）から続く追跡側のス�
 2. **部分適用契約と publish-polish の解決**（必須依存）: 次の順で
    `pr-comment/partial-application-contract.md`（publish-polish 部分適用契約の正本）を探して
    Read する — (1) 本スキルの隣（`../pr-comment/partial-application-contract.md`）、
-   (2) 実行エージェントのスキルディレクトリのプロジェクト側 → グローバル側。どこにも無ければ、
+   (2) 実行ハーネスのスキルディレクトリのプロジェクト側 → グローバル側。どこにも無ければ、
    導入手順（`npx skills add tmstack-io/agent-skills --skill pr-comment`）を案内して中止する。
    続けて、同ファイルの「publish-polish の解決手順」に従って
    `publish-polish/SKILL.md` を解決する（解決できなければ同手順の規定どおり中止する）。

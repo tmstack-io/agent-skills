@@ -84,10 +84,10 @@ disable-model-invocation: true
   「コミット対象なし」とだけ報告。
 - **前提スキル plainify が見つからない**: 本スキルは [5] の日本語メッセージ整形で
   同梱スキル plainify に依存する。次の順で `plainify/SKILL.md` を探す —
-  (1) 本スキルの隣（`../plainify/SKILL.md`）、(2) 実行エージェント自身の
+  (1) 本スキルの隣（`../plainify/SKILL.md`）、(2) 実行ハーネス自身の
   スキルディレクトリのプロジェクト側 → グローバル側（Claude Code: `.claude/skills/` →
-  `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.codex/skills/`。他のエージェントも
-  自身の2箇所を同順。他エージェント用のディレクトリは探さない）。どこにも無ければ
+  `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.codex/skills/`。他のハーネスも
+  自身の2箇所を同順。他ハーネス用のディレクトリは探さない）。どこにも無ければ
   コミットを一切作らず中断し、復旧手順を案内する（agent-skills リポジトリ
   `tmstack-io/agent-skills` から plainify を導入して再実行。
   例: `npx skills add tmstack-io/agent-skills --skill plainify`）。
