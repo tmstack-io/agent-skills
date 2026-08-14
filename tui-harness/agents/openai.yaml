@@ -1,0 +1,3 @@
+interface:
+  display_name: "TUI Harness"
+  short_description: "TUI マルチプレクサのペインで他 LLM ハーネスを起動・委譲・回収する基盤"

@@ -46,7 +46,8 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 | skill-refine | 既存スキルの査読→承認→洗練を行うメタスキル（craft 基準は writing-great-skills（`mattpocock/skills`）を正本として適用。既定は汎用スキル基準。`--myself` で実行エージェント専用基準、`--project` でプロジェクト専用基準に切り替え） |
 | slack-research | プロジェクトに紐づく Slack ワークスペースの読み取り専用調査（`.slack-research-env` の User Token で curl から Web API を直接呼ぶ。MCP 不要・複数ワークスペースはプロジェクト毎のトークンで切り替え） |
 | smart-commit | 未コミット変更を論理単位の atomic コミットへ自動分割・登録（規約検出・単位ごと軽量検証つき） |
+| tui-harness | TUI マルチプレクサのペインで他 LLM ハーネス（codex / cursor-agent / agy / grok）を起動・委譲・回収する基盤（`mux.sh` / `catalog.sh` / ハーネス別 transports。現行バックエンド herdr） |
 
 ## スキル間の依存
 
-smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。[claude-skills](https://github.com/tmstack-io/claude-skills)（別リポジトリ）の deep-pr-review も本リポジトリの plainify に依存する。各スキルは実行前に依存先を「自スキルの隣 → 実行エージェント自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
+smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。[claude-skills](https://github.com/tmstack-io/claude-skills)（別リポジトリ）の deep-pr-review も本リポジトリの plainify に依存し、同リポジトリの roundtable / concertino / deep-pr-review は本リポジトリの tui-harness に依存する。各スキルは実行前に依存先を「自スキルの隣 → 実行エージェント自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
