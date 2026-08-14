@@ -1,0 +1,5 @@
+interface:
+  display_name: "PR Comment"
+  short_description: "deep-pr-review の統合レビューから選んだ指摘のみを PR へレビューコメント投稿"
+policy:
+  allow_implicit_invocation: false

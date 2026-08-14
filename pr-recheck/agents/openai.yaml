@@ -1,0 +1,5 @@
+interface:
+  display_name: "PR Recheck"
+  short_description: "投稿済み指摘が新 head で解消されたかを検証し判定つきの返信を投稿"
+policy:
+  allow_implicit_invocation: false

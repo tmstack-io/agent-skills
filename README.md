@@ -1,6 +1,6 @@
 # agent-skills
 
-自作コーディングエージェント用の**汎用**スキルの正本リポジトリ。基本のベース運用は Claude Code（`~/.claude/skills/` からは各スキルディレクトリへのシンボリックリンクで参照する）で、codex 等の他エージェントでも動く。Claude Code 専用スキル（deep-pr-review / iterate-review / memory-dream ほか）は [claude-skills](https://github.com/tmstack-io/claude-skills) を参照。
+自作コーディングエージェント用の**汎用**スキルの正本リポジトリ。基本のベース運用は Claude Code（`~/.claude/skills/` からは各スキルディレクトリへのシンボリックリンクで参照する）で、codex 等の他エージェントでも動く。Claude Code 専用スキル（iterate-review / memory-dream）は [claude-skills](https://github.com/tmstack-io/claude-skills) を参照。
 
 ## 使い方（新しいマシンでの展開）
 
@@ -40,9 +40,12 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 |---|---|
 | concertino | 指定ロール（implement / review / explore）を複数ハーネス奏者の編成（合計4まで）に配役するセッションモード（TUI マルチプレクサ環境専用。奏者ごとにハーネスを指定可、既定 codex） |
 | decruft | 不要記述（メタ環境依存・履歴/変更ナラティブ等）の検出・削除。引数なしでセッション生成物の後処理 |
+| deep-pr-review | GitHub PR の高精度レビュー（多エージェント＋外部ハーネス独立レビュー＋architect メタ検証を統合レビュー1本に集約。TUI マルチプレクサ環境専用・投稿は pr-comment） |
 | impact-investigation | CVE・指摘・バグ報告起点の影響範囲調査レポート生成（調査と修正を分離。`--for <読者>` で指定読者向けの平易な日本語に） |
 | maestro | 実行エージェント本体を非実装の指揮者に固定し、実装・調査を奏者（サブエージェント、無い環境では指揮者と同系統ハーネスのペイン）へ委譲するセッションモード（`--deep` / `--fast` で検収深度を上書き） |
 | plainify | AI 生成の難解な日本語を平易化する事後リライト（日本語専用。既定は意味厳守、`--for <読者>` で指定読者への読者適応。GitHub PR / issue も入力可） |
+| pr-comment | 同一セッションの deep-pr-review 統合レビューから、ユーザーが選んだ指摘だけを GitHub PR のレビューコメントとして投稿（publish-polish で公開整形・行アンカー／会話コメント） |
+| pr-recheck | 投稿済みの指摘コメントが PR の新しい head で解消されているかを検証（修正検証）し、選別を経て判定つきの返信を投稿（解消は resolve 併実施。セッションを跨いで動作） |
 | publish-polish | 公開予定のドキュメント・コードコメントを初見の読者に成立する公開品質へ書き換え（漏えい疑いは警告のみ。`--style` で文体・体裁・構成の磨き込みも提案） |
 | roundtable | 与えられた合議の主題を異系統の3 LLM（議長系統の host 固定席＋起動ごとに選ぶ2席）で合議し、最終回答に統合する円卓会議（TUI マルチプレクサ環境専用。議事録を `.roundtable/` に永続保存） |
 | session-to-prompt | セッションの決定事項から宛先別の自己完結実装プロンプトを生成 |
@@ -54,4 +57,4 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 
 ## スキル間の依存
 
-smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。roundtable / concertino は tui-harness に依存し（必須）、maestro はペイン経路（サブエージェント機構が無い実行エージェント）でのみ tui-harness に依存する。solista は concertino に、roundtable の実装プロンプト書き出し（求められた場合のみ）は session-to-prompt に依存する。[claude-skills](https://github.com/tmstack-io/claude-skills)（別リポジトリ）の deep-pr-review も本リポジトリの plainify と tui-harness に依存する。各スキルは実行前に依存先を「自スキルの隣 → 実行エージェント自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
+smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。roundtable / concertino / deep-pr-review は tui-harness に依存し（必須）、maestro はペイン経路（サブエージェント機構が無い実行エージェント）でのみ tui-harness に依存する。deep-pr-review は plainify にも依存する（必須）。solista は concertino に、pr-comment / pr-recheck は publish-polish に依存し（pr-recheck は pr-comment 同梱の部分適用契約も参照する）、roundtable の実装プロンプト書き出し（求められた場合のみ）は session-to-prompt に依存する。各スキルは実行前に依存先を「自スキルの隣 → 実行エージェント自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
