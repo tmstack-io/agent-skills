@@ -1,0 +1,5 @@
+interface:
+  display_name: "Iterate Review"
+  short_description: "レビュー→修正→再レビューを GREEN まで繰り返す品質ゲート"
+policy:
+  allow_implicit_invocation: false

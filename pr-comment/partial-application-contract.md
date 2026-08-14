@@ -7,7 +7,7 @@ pr-comment / pr-recheck が publish-polish を投稿文面の整形に部分適�
 ## publish-polish の解決手順
 
 次の順で `publish-polish/SKILL.md` を探して Read する — (1) 参照するスキルの隣
-（`../publish-polish/SKILL.md`）、(2) 実行エージェントのスキルディレクトリのプロジェクト側 →
+（`../publish-polish/SKILL.md`）、(2) 実行ハーネスのスキルディレクトリのプロジェクト側 →
 グローバル側。どこにも無ければ処理を開始せず中止し、導入手順
 （`npx skills add tmstack-io/agent-skills --skill publish-polish`）を案内する
 （未整形の内部語混じり文面で投稿・返信する縮退はしない）。
