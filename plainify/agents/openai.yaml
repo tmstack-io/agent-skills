@@ -1,5 +1,5 @@
 interface:
   display_name: "Plainify"
-  short_description: "難解な日本語を指定読者向けに平易化リライト"
+  short_description: "AI 出力の難解な文章を平易化リライト（言語別規則対応）"
 policy:
   allow_implicit_invocation: false
