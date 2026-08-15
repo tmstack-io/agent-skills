@@ -1,0 +1,11 @@
+# Anthropic API 取得済みのモデル ID 一覧（取得日: 2026-08-15）。新モデルの発表・提供終了時に更新する。
+claude-opus-5
+claude-sonnet-5
+claude-fable-5
+claude-opus-4-8
+claude-opus-4-7
+claude-sonnet-4-6
+claude-opus-4-6
+claude-opus-4-5-20251101
+claude-haiku-4-5-20251001
+claude-sonnet-4-5-20250929
