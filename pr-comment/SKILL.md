@@ -56,9 +56,10 @@ worktree も作らない（必要なコード文脈は PR 差分で足りる）�
    （冒頭の `対象:` から始まる見出し行に PR URL と `head:` の値を含み、重要度階層・指摘ID を
    持つもの）があること。無ければ deep-pr-review の実行を案内して中止する
    （**指摘を推測で再構成しない**）。複数ある場合は直近の出力を対象とする。
-2. **publish-polish の解決**（必須依存）: 同フォルダの `partial-application-contract.md`
-   （publish-polish 部分適用契約の正本）を Read し、その「publish-polish の解決手順」に従って
-   `publish-polish/SKILL.md` を解決する。解決できなければ同手順の規定どおり中止する。
+2. **整形スキルの解決**（必須依存）: 同フォルダの `partial-application-contract.md`
+   （公開整形契約の正本）を Read し、その「整形スキルの解決手順」に従って
+   `publish-polish/SKILL.md` と `plainify/SKILL.md` を解決する。解決できなければ
+   同手順の規定どおり中止する。
 3. **gh の確認**: `command -v gh` と `gh auth status`。不可なら導入・ログインを案内して中止する。
 4. **PR の特定と突合**: 対象レビュー冒頭の見出し行
    （`対象: <PR URL> / ベースブランチ: … / head: …` の形式）に含まれる PR URL から
@@ -213,12 +214,12 @@ gh api --paginate "repos/<owner>/<repo>/issues/<PR番号>/comments" --jq '.[] | 
 
 ---
 
-## publish-polish による公開整形
+## 公開整形（publish-polish → plainify）
 
 選ばれた指摘ごとに投稿本文を作る。deep-pr-review がターミナルへ出した文面をそのまま投げては
 いけない。**読者が変わるため**である——ターミナル出力の読者はレビューを依頼した本人だが、
 PR コメントの読者は PR の作者と、後から差分を追う第三者である。整形は同フォルダの
-`partial-application-contract.md`（publish-polish 部分適用契約の正本。前提ゲート2で Read 済み）の
+`partial-application-contract.md`（公開整形契約の正本。前提ゲート2で Read 済み）の
 契約に従う。
 
 本スキルでの三点宣言:
@@ -260,7 +261,7 @@ gh api repos/<owner>/<repo>/pulls/<PR番号>/comments \
   -F line=<行番号> \
   -f side=<side> \
   -f body="$(cat <<'EOF'
-<publish-polish 適用後の本文>
+<公開整形適用後の本文>
 EOF
 )" --jq '.html_url'
 ```

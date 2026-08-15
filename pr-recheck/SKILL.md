@@ -18,7 +18,7 @@ deep-pr-review（生成）・pr-comment（投稿）から続く追跡側のス�
 
 **セッションを跨ぐ前提で設計している** — 入力は PR 上のコメントとそのメタデータのみに依り、
 同一セッションに deep-pr-review の出力が残っていてもそれを前提にしない（PR 上のコメントだけを
-正とする単一挙動）。投稿済みコメントは publish-polish 適用済みで `パス:行`・問題・推奨を自己完結で
+正とする単一挙動）。投稿済みコメントは公開整形適用済みで `パス:行`・問題・推奨を自己完結で
 含むため、元の指摘ID を復元する必要はない。レビュー時 head は各コメントの `original_commit_id`
 から機械的に復元する。
 
@@ -49,13 +49,14 @@ deep-pr-review（生成）・pr-comment（投稿）から続く追跡側のス�
 順に確認し、満たせなければ**検証を開始せずに中止**する。
 
 1. **gh の確認**: `command -v gh` と `gh auth status`。不可なら導入・ログインを案内して中止する。
-2. **部分適用契約と publish-polish の解決**（必須依存）: 次の順で
-   `pr-comment/partial-application-contract.md`（publish-polish 部分適用契約の正本）を探して
+2. **公開整形契約と整形スキルの解決**（必須依存）: 次の順で
+   `pr-comment/partial-application-contract.md`（公開整形契約の正本）を探して
    Read する — (1) 本スキルの隣（`../pr-comment/partial-application-contract.md`）、
    (2) 実行ハーネスのスキルディレクトリのプロジェクト側 → グローバル側。どこにも無ければ、
    導入手順（`npx skills add tmstack-io/agent-skills --skill pr-comment`）を案内して中止する。
-   続けて、同ファイルの「publish-polish の解決手順」に従って
-   `publish-polish/SKILL.md` を解決する（解決できなければ同手順の規定どおり中止する）。
+   続けて、同ファイルの「整形スキルの解決手順」に従って
+   `publish-polish/SKILL.md` と `plainify/SKILL.md` を解決する（解決できなければ
+   同手順の規定どおり中止する）。
 3. **PR の特定と状態確認**: 「入力（引数）」の規則で PR 番号と `<owner>/<repo>` を確定する
    （省略時の PR は `gh pr view --json number,url`、PR 番号のみ・省略時のリポジトリは
    `gh repo view --json nameWithOwner` で取得）。続けて `gh pr view <PR番号>
@@ -257,10 +258,10 @@ git worktree add --detach <WT> "refs/pr-recheck/<PR番号>"
 
 ---
 
-## publish-polish による返信整形
+## 返信整形（publish-polish → plainify）
 
 選ばれた各返信の文面を整形する。整形は前提ゲート2で Read した
-`pr-comment/partial-application-contract.md`（publish-polish 部分適用契約の正本）の契約に
+`pr-comment/partial-application-contract.md`（公開整形契約の正本）の契約に
 そのまま従う（本節では再掲しない）。
 
 本スキルでの三点宣言（契約が求める想定読者・配布形態・約束するもの）:
@@ -297,7 +298,7 @@ git worktree add --detach <WT> "refs/pr-recheck/<PR番号>"
 ```sh
 gh api "repos/<owner>/<repo>/pulls/<PR番号>/comments/<コメントID>/replies" \
   -f body="$(cat <<'EOF'
-<publish-polish 適用後の本文>
+<公開整形適用後の本文>
 EOF
 )" --jq '.html_url'
 ```
