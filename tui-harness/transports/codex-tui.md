@@ -12,7 +12,7 @@ codex --sandbox workspace-write -c approval_policy=on-request -c approvals_revie
 
 - **sandbox は `workspace-write`**: read-only は回答ファイルの書き出しと通信規約の push まで遮断するため使わない。書き込みの遮断はブリーフの規律が担う。
 - **`on-request` ＋ `auto_review`**: 承認要求（sandbox 昇格・MCP ツール承認等）を codex のリスク評価サブエージェントに自動裁定させる公式機構で、無人運用の成立要件。`never` は承認要求を裁定に乗せないため使わない。
-- 呼び出し側が `--model` を指定した場合のみ付加する: `-m <slug>`、effort 付き（`<slug>@<effort>` 解決時）はさらに `-c model_reasoning_effort=<effort>`。省略時は `~/.codex/config.toml` の既定。実測モデル名はペイン下部の表示（例: `gpt-5.6-terra max`）で確認できる。モデル名は TUI 起動時に検証されず、誤指定は最初のターンで API エラーとして顕在化する（`catalog.sh models codex` による事前検証が呼び出し側の規定）。
+- 呼び出し側が `--model` を指定した場合のみ付加する: `-m <slug>`、effort 付き（`<slug>@<effort>` 解決時）はさらに `-c model_reasoning_effort=<effort>`。省略時は `~/.codex/config.toml` の既定。実測モデル名はペイン下部の表示（例: `gpt-5.6-terra max`）で確認できる（roundtable の実測追記等、指定と実効の照合に使う）。モデル名は TUI 起動時に検証されず、誤指定は最初のターンで API エラーとして顕在化する（`catalog.sh validate codex` による事前検証が呼び出し側の規定）。
 
 ## trust ダイアログ
 
