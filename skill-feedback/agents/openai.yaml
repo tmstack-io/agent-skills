@@ -1,0 +1,3 @@
+interface:
+  display_name: "Skill Feedback"
+  short_description: "同一セッションでのスキル実行の証跡から問題点を洗い出し SKILL.md を改善"
