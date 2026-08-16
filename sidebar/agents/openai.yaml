@@ -1,0 +1,5 @@
+interface:
+  display_name: "Sidebar"
+  short_description: "実行中と別系統のモデルへ問いを投げ、回答を素通しで持ち帰る別席相談"
+policy:
+  allow_implicit_invocation: false
