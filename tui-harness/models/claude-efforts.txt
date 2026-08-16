@@ -1,0 +1,7 @@
+# claude CLI の --effort が受け付ける値（claude --help の実測に基づく静的一覧。
+# claude 側で値が増減したらこのファイルを更新してから再実行する）
+low
+medium
+high
+xhigh
+max

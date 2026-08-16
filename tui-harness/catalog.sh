@@ -8,7 +8,7 @@
 #       候補 CLI ごとに「名前<TAB>ok|excluded<TAB>詳細」を1行ずつ出力する。
 #       ok の詳細にはモデル一覧等の補足を含める。
 #   catalog.sh models <cli>
-#       当該 CLI の指定可能モデルを1行1件で出力する（--model 検証の正本）。
+#       当該 CLI の指定可能モデルを1行1件で出力する（モデル指定の検証の正本）。
 #       取得できない場合は理由を stderr に出して非0で終了する。
 #   catalog.sh family <cli> <model-spec>
 #       CLI 固有の起動指定から、モデル系統（モデル名の先頭ファミリートークン。
@@ -16,6 +16,9 @@
 #       起動時までモデルが決まらない指定は理由を stderr に出して非0で終了する。
 #   catalog.sh validate <cli> <model-spec>
 #       起動指定が当該 CLI の現在の一覧・設定値で有効かを検証する。
+#       <モデル>@<エフォート> 形はエフォート部の許容値も照合する（codex は
+#       codex debug models、claude は models/claude-efforts.txt が正本）。
+#       effort の設定手段が無い CLI への @ 付き指定は非0で終了する。
 #
 # 新しい CLI の追加: models_<名前> / validate_<名前> / probe_<名前> を書いて各ディスパッチへ
 # 分岐を足す（family は共通の model_family で足り、CLI 固有の接頭辞剥ぎが要る場合のみ
@@ -26,6 +29,7 @@ set -u -o pipefail
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 CLAUDE_MODELS_FILE="$SCRIPT_DIR/models/claude.txt"
+CLAUDE_EFFORTS_FILE="$SCRIPT_DIR/models/claude-efforts.txt"
 
 TIMEOUT_BIN=$(command -v gtimeout || command -v timeout) || {
   echo "timeout 未導入 (macOS は brew install coreutils)" >&2
@@ -117,6 +121,15 @@ models_claude() {
   ' "$CLAUDE_MODELS_FILE"
 }
 
+efforts_claude() {
+  [ -r "$CLAUDE_EFFORTS_FILE" ] \
+    || { echo "Claude effort 一覧を読めない: $CLAUDE_EFFORTS_FILE" >&2; return 1; }
+  local out
+  out=$(grep -v '^#' "$CLAUDE_EFFORTS_FILE" | grep -v '^[[:space:]]*$')
+  [ -n "$out" ] || { echo "Claude effort 一覧が空: $CLAUDE_EFFORTS_FILE" >&2; return 1; }
+  printf '%s\n' "$out"
+}
+
 resolve_claude_model() {
   local spec=$1 ids
   if [[ "$spec" == *"[1m]" ]]; then
@@ -193,6 +206,9 @@ validate_codex() {
 
 validate_cursor_agent() {
   local spec=$1 listed_models
+  case "$spec" in
+    *@*) echo "reasoning effort の設定手段が無い CLI: cursor-agent（@ 指定を外す）" >&2; return 1 ;;
+  esac
   family_cursor_agent "$spec" >/dev/null || return 1
   listed_models=$(models_cursor_agent) || return 1
   printf '%s\n' "$listed_models" | grep -Fxq "$spec" \
@@ -201,6 +217,9 @@ validate_cursor_agent() {
 
 validate_agy() {
   local spec=$1 listed_models
+  case "$spec" in
+    *@*) echo "reasoning effort の設定手段が無い CLI: agy（@ 指定を外す）" >&2; return 1 ;;
+  esac
   model_family "$spec" >/dev/null || return 1
   listed_models=$(models_agy) || return 1
   printf '%s\n' "$listed_models" | grep -Fxq "$spec" \
@@ -208,11 +227,25 @@ validate_agy() {
 }
 
 validate_claude() {
-  resolve_claude_model "$1" >/dev/null
+  local spec=$1 model effort allowed
+  case "$spec" in
+    @*|*@|*@*@*) echo "エフォート指定の形式が不正: $spec" >&2; return 1 ;;
+  esac
+  model=${spec%%@*}
+  resolve_claude_model "$model" >/dev/null || return 1
+  if [ "$spec" != "$model" ]; then
+    effort=${spec#*@}
+    allowed=$(efforts_claude) || return 1
+    printf '%s\n' "$allowed" | grep -Fxq "$effort" \
+      || { echo "未対応の reasoning effort: ${model}@${effort}（候補: $(printf '%s\n' "$allowed" | paste -sd, -)）" >&2; return 1; }
+  fi
 }
 
 validate_grok() {
   local spec=$1 listed_models
+  case "$spec" in
+    *@*) echo "reasoning effort の設定手段が無い CLI: grok（@ 指定を外す）" >&2; return 1 ;;
+  esac
   model_family "$spec" >/dev/null || return 1
   listed_models=$(models_grok) || return 1
   printf '%s\n' "$listed_models" | grep -Fxq "$spec" \
@@ -265,7 +298,7 @@ probe_claude() {
   printf '%s\n' "$auth" | grep -Eq '"loggedIn"[[:space:]]*:[[:space:]]*true' \
     || { printf 'claude\texcluded\t認証切れ（claude auth login が必要）\n'; return; }
   if out=$(models_claude 2>&1); then
-    printf 'claude\tok\tmodels: %s ／ API 取得済み静的一覧（models/claude.txt）\n' "$(printf '%s\n' "$out" | join_lines)"
+    printf 'claude\tok\tmodels: %s ／ API 取得済み静的一覧（models/claude.txt）／ reasoning effort は <モデル>@<エフォート> 形で指定（許容値: models/claude-efforts.txt）\n' "$(printf '%s\n' "$out" | join_lines)"
   else
     printf 'claude\texcluded\t%s\n' "$(printf '%s' "$out" | head -n1 | cut -c1-160)"
   fi
