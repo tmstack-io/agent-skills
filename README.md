@@ -52,6 +52,7 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 | publish-polish | 公開予定のドキュメント・コードコメントを初見の読者に成立する公開品質へ書き換え（漏えい疑いは警告のみ。`--style` で文体・体裁・構成の磨き込みも提案） |
 | roundtable | 与えられた合議の主題を異系統の3 LLM（議長系統の host 固定席＋未指定時にハーネス、各モデルの2段階で選ぶ2席）で合議し、最終回答に統合する円卓会議（TUI マルチプレクサ環境専用。議事録を `.roundtable/` に永続保存） |
 | session-to-prompt | セッションの決定事項から宛先別の自己完結実装プロンプトを生成 |
+| sidebar | 実行中と別系統のモデルへその場で問いを投げ、回答を統合せず全文のまま持ち帰る別席相談（TUI マルチプレクサ環境専用。既定1席・工程非依存・記録を `.sidebar/` に永続保存） |
 | skill-feedback | 同一セッションで実際に使ったスキルの実行の証跡（逸脱・補完・介入・空振り）から問題点を洗い出し、汎化テストを通った修正だけを承認後に SKILL.md へ適用（skill-refine の静的査読と別系統のセッション駆動改善。汎化の地平は対象の適用範囲で切替 — `--myself` でハーネス軸、`--project` でプロジェクト軸を免除） |
 | skill-refine | 既存スキルの査読→承認→洗練を行うメタスキル（点検は独立3体の多重点検で過半数指摘のみ正規受理。craft 基準は writing-great-skills（`mattpocock/skills`）を正本として適用。既定は汎用スキル基準。`--myself` で実行ハーネス専用基準、`--project` でプロジェクト専用基準に切り替え） |
 | slack-research | プロジェクトに紐づく Slack ワークスペースの読み取り専用調査（`.slack-research-env` の User Token で curl から Web API を直接呼ぶ。MCP 不要・複数ワークスペースはプロジェクト毎のトークンで切り替え） |
@@ -61,4 +62,4 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 
 ## スキル間の依存
 
-smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。roundtable / concertino / deep-pr-review は tui-harness に依存し（必須）、maestro はペイン経路（サブエージェント機構が無い実行ハーネス）でのみ tui-harness に依存する。deep-pr-review は plainify にも依存する（必須）。iterate-review はレビュアー解決のハーネスペイン経路（既定）で tui-harness に依存する（TUI 環境が無い場合はサブエージェントへ縮退）。skill-refine はサブエージェント機構が無い環境の点検ペイン経路でのみ tui-harness に依存する（TUI 環境も無ければ自己実行へ縮退）。solista は concertino に、pr-comment / pr-recheck は publish-polish と plainify に依存し（pr-recheck は pr-comment 同梱の公開整形契約も参照する）、roundtable の実装プロンプト書き出し（求められた場合のみ）は session-to-prompt に依存する。各スキルは実行前に依存先を「自スキルの隣 → 実行ハーネス自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
+smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。roundtable / concertino / deep-pr-review / sidebar は tui-harness に依存し（必須）、maestro はペイン経路（サブエージェント機構が無い実行ハーネス）でのみ tui-harness に依存する。deep-pr-review は plainify にも依存する（必須）。iterate-review はレビュアー解決のハーネスペイン経路（既定）で tui-harness に依存する（TUI 環境が無い場合はサブエージェントへ縮退）。skill-refine はサブエージェント機構が無い環境の点検ペイン経路でのみ tui-harness に依存する（TUI 環境も無ければ自己実行へ縮退）。solista は concertino に、pr-comment / pr-recheck は publish-polish と plainify に依存し（pr-recheck は pr-comment 同梱の公開整形契約も参照する）、roundtable の実装プロンプト書き出し（求められた場合のみ）は session-to-prompt に依存する。各スキルは実行前に依存先を「自スキルの隣 → 実行ハーネス自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
