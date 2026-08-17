@@ -22,7 +22,7 @@ argument-hint: "[--second <CLI名>[=<モデル>[@<エフォート>]]] [--third <
 - **議長** = 実行エージェント本体（このセッションで本スキルを実行するエージェント。Claude Code に限らない）。**主題に自分では回答しない**。ブリーフの配布・回答の突き合わせ・収束判定・最終統合のみを行う。配布物に議長自身の意見・評価を混ぜない（中立性が本スキルの信頼性の根拠であるため）。議長としての判断が入るのは最終統合の工程だけである。
 - **賢者3席**: 合議において回答を担うエージェントのロール名（起用形態は委譲先ハーネスのペインまたはサブエージェント）。固定席は `host`（議長系統の席。起用形態は「賢者の起用」参照）の1席のみ。**2席目・3席目（席名 `second` / `third`）は起動ごとにハーネスカタログから指定する**。賢者の識別子（議事録のファイル名・push ラベル・ペイン対応表）には席名を使い、席→CLI→実効モデルの対応は議事録 `question.md` の編成表を正本とする。
 - **TUI 専用**: 賢者 CLI（ハーネス）は対話ハーネスを TUI マルチプレクサのペインで起用する（headless 実行はしない — CLI ごとにツール権限・調査能力が歪であり、合議の品質を非対称にするため）。ペイン操作・委譲・裁定の共通手順は tui-harness の正本とする。
-  - **tui-harness 参照**: tui-harness の SKILL.md を Read し、このコンテキスト内で適用する。解決順: `../tui-harness/SKILL.md` → 実行ハーネス自身のスキルディレクトリをプロジェクト側 → グローバル側の順（Claude Code: `.claude/skills/` → `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.codex/skills/`。他ハーネス用のディレクトリは探さない）。見つからない場合は合議を開始せず、復旧手順（`npx skills add tmstack-io/agent-skills --skill tui-harness`）を案内して中止する。
+  - **tui-harness 参照**: tui-harness の SKILL.md を Read し、このコンテキスト内で適用する。解決順: `../tui-harness/SKILL.md` → 実行ハーネス自身のスキルディレクトリをプロジェクト側 → グローバル側の順（Claude Code: `.claude/skills/` → `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.agents/skills/`。他ハーネス用のディレクトリは探さない）。見つからない場合は合議を開始せず、復旧手順（`npx skills add tmstack-io/agent-skills --skill tui-harness`）を案内して中止する。
   - **呼び出しパラメータ**: 成果物置き場＝議事録ディレクトリ、push ラベル＝席名（`[second]` / `[third]`、host 席をペイン起用した場合は `[host]` も）、裁定スコープ＝議事録ディレクトリへの書き込み＋通信規約の push（tui-harness の既定どおり）。second / third の候補検証とモデル系統の確定には tui-harness の「異系統委譲」を適用する。ただし、同節手順3の「実行中の系統との比較」は「編成の確定」手順7の異系統性ガードへ置き換える。
 
 ## 入力
@@ -119,7 +119,7 @@ git リポジトリで `.roundtable/` が ignore されていなければ、`.ro
 4. **見解の相違**（残った場合のみ）— 各立場の要約と、それでも上記の結論を選んだ理由。相違を無かったことにしない。
 5. **経過の要約** — ラウンド数と、各賢者の立場の変遷（1〜2行ずつ）。
 
-提示の末尾に、次の一手として **session-to-prompt による実装プロンプトの書き出し**を提案する（提案のみ。求められるまで実行しない）。求められたら session-to-prompt の SKILL.md を、`../session-to-prompt/SKILL.md` → 実行ハーネス自身のスキルディレクトリのプロジェクト側 → グローバル側（Claude Code: `.claude/skills/` → `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.codex/skills/`）の順で解決して Read し、このコンテキスト内で適用する（Skill ツール経由の別呼び出しにはしない）。見つからない場合は書き出しのみ中止し、復旧手順（`npx skills add tmstack-io/agent-skills --skill session-to-prompt`）を案内する（合議の結果には影響しない）。
+提示の末尾に、次の一手として **session-to-prompt による実装プロンプトの書き出し**を提案する（提案のみ。求められるまで実行しない）。求められたら session-to-prompt の SKILL.md を、`../session-to-prompt/SKILL.md` → 実行ハーネス自身のスキルディレクトリのプロジェクト側 → グローバル側（Claude Code: `.claude/skills/` → `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.agents/skills/`）の順で解決して Read し、このコンテキスト内で適用する（Skill ツール経由の別呼び出しにはしない）。見つからない場合は書き出しのみ中止し、復旧手順（`npx skills add tmstack-io/agent-skills --skill session-to-prompt`）を案内する（合議の結果には影響しない）。
 
 完了条件: `verdict.md` が議事録に存在し、同内容の全文と session-to-prompt の提案をチャットに出力した。
 
