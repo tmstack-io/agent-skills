@@ -23,7 +23,7 @@ argument-hint: "[--deep（全タスク深査読） | --fast（深査読の自動
 
 - **サブエージェント経路**（既定）: 実行ハーネスにサブエージェント起用と結果回収の機能（Claude Code では Agent ツール）があれば、奏者はサブエージェントとする。
 - **ペイン経路**（サブエージェント機構が無い場合）: 指揮者と同系統の CLI（codex 指揮者なら codex、grok 指揮者なら grok）を TUI マルチプレクサのペインで奏者に立てる。次をすべて満たした場合のみ採用する:
-  1. tui-harness の SKILL.md を Read できる。解決順: `../tui-harness/SKILL.md` → 実行ハーネス自身のスキルディレクトリをプロジェクト側 → グローバル側の順（Claude Code: `.claude/skills/` → `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.codex/skills/`。他ハーネス用のディレクトリは探さない）。見つからなければ復旧手順（`npx skills add tmstack-io/agent-skills --skill tui-harness`）を案内して起動を中止する。
+  1. tui-harness の SKILL.md を Read できる。解決順: `../tui-harness/SKILL.md` → 実行ハーネス自身のスキルディレクトリをプロジェクト側 → グローバル側の順（Claude Code: `.claude/skills/` → `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.agents/skills/`。他ハーネス用のディレクトリは探さない）。見つからなければ復旧手順（`npx skills add tmstack-io/agent-skills --skill tui-harness`）を案内して起動を中止する。
   2. tui-harness の `mux.sh detect` が検証済みバックエンドを返す。返さなければ「対応する TUI マルチプレクサが無いため maestro を起動できない」と警告を提示して終了する。
   3. 指揮者の CLI の `transports/<CLI名>-tui.md` が存在する。無ければ tui-harness のカタログ外 CLI の追加手順を案内して起動を中止する。
   4. **ユーザーの許諾**: 「サブエージェント機構が無いため、指揮者と同じ CLI（<CLI名>）をペイン分割で奏者に立てる。委譲は直列実行になる」ことを散文提示で明示し、許諾を得る。許諾が得られなければ起動を中止する。

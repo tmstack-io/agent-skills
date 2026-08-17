@@ -38,7 +38,7 @@ argument-hint: "--implement [<値>]|--review [<値>]|--explore [<値>]（値は 
 既存編成がある場合は先に配役解除してから再度呼び出す（編成の追加・変更は本スキルでは扱わない）。
 
 1. **TUI 環境の確認**: tui-harness の `mux.sh detect` が検証済みバックエンドを返さなければ、「対応する TUI マルチプレクサが無い」と案内して配役を開始せず中止する（本スキルは TUI 専用）。
-2. tui-harness の SKILL.md を Read し、このコンテキスト内で適用する。解決順: `../tui-harness/SKILL.md` → 実行ハーネス自身のスキルディレクトリをプロジェクト側 → グローバル側の順（Claude Code: `.claude/skills/` → `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.codex/skills/`。他ハーネス用のディレクトリは探さない）。見つからない場合は配役を開始せず、復旧手順（`npx skills add tmstack-io/agent-skills --skill tui-harness`）を案内して中止する。呼び出しパラメータ: 成果物置き場＝`.concertino/<奏者ラベル>/`、push ラベル＝`<奏者ラベル>`、裁定スコープ＝ implement 奏者はパート譜＋成果物置き場、review / explore 奏者は成果物置き場のみ（いずれも＋通信規約の push）。承認ダイアログは指揮者裁定（tui-harness の「指揮者裁定」節の規定に従う。本 SKILL.md では再掲しない）。
+2. tui-harness の SKILL.md を Read し、このコンテキスト内で適用する。解決順: `../tui-harness/SKILL.md` → 実行ハーネス自身のスキルディレクトリをプロジェクト側 → グローバル側の順（Claude Code: `.claude/skills/` → `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.agents/skills/`。他ハーネス用のディレクトリは探さない）。見つからない場合は配役を開始せず、復旧手順（`npx skills add tmstack-io/agent-skills --skill tui-harness`）を案内して中止する。呼び出しパラメータ: 成果物置き場＝`.concertino/<奏者ラベル>/`、push ラベル＝`<奏者ラベル>`、裁定スコープ＝ implement 奏者はパート譜＋成果物置き場、review / explore 奏者は成果物置き場のみ（いずれも＋通信規約の push）。承認ダイアログは指揮者裁定（tui-harness の「指揮者裁定」節の規定に従う。本 SKILL.md では再掲しない）。
 3. 実行中（指揮者）のモデル系統を tui-harness「異系統委譲」の実行中の系統の規則で確定する（Claude Code / codex 等の単一系統ハーネスでは静的に確定し、確認は不要。特定できなければ散文提示でユーザーに確認し、回答を得るまで配役を開始しない）。
 4. 各奏者のハーネスとモデルを、tui-harness「異系統委譲」の手順1〜3に従って確定する。本スキル固有の差分は次の3点だけ: ハーネス未指定・モデル未指定の奏者はそれぞれまとめて1回の散文提示にする、ハーネス候補は指揮者と異なる系統のモデルを1つ以上持つものに絞る、モデル候補は指揮者と同系統のものを除いて示す。条件を満たす候補が無ければ配役を開始せず、除外理由と復旧方法を示して中止する（冒頭の規定どおり同系統への縮退はしない）。
 5. ユーザーへ宣言する: 編成（奏者ラベル→ロール→ハーネス→モデルの対応）・解除方法（「配役解除」等の明示指示があるまでセッション全体に適用されること）。

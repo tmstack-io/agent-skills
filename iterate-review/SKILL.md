@@ -29,7 +29,7 @@ argument-hint: "[対象（省略時は現在の作業差分）] [--cli <CLI名>[
 次の順で解決し、最初に成立した経路を1回のループ内で固定する。採用した経路（と縮退の場合はその旨）を開始時の報告に明記する:
 
 1. **セッションの review 配役**: セッションに review ロールの配役（例: solista / concertino の `--review` — 本スキルと同じ収録場所の姉妹スキル）が敷かれていれば、その配役先がレビュアー（複数奏者の編成では、ラウンドの実施と指摘の統合は当該配役スキルの review 規定に従う）。
-2. **ハーネスペイン**（配役が無い場合の既定）: tui-harness の SKILL.md を Read してこのコンテキスト内で適用する。解決順は `../tui-harness/SKILL.md` → 実行ハーネス自身のスキルディレクトリをプロジェクト側 → グローバル側の順（Claude Code: `.claude/skills/` → `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.codex/skills/`。他ハーネス用のディレクトリは探さない）。見つからない場合は経路③へ縮退し、復旧手順 `npx skills add tmstack-io/agent-skills --skill tui-harness` を報告に添える。見つかった場合は次の全条件を満たすときに成立する:
+2. **ハーネスペイン**（配役が無い場合の既定）: tui-harness の SKILL.md を Read してこのコンテキスト内で適用する。解決順は `../tui-harness/SKILL.md` → 実行ハーネス自身のスキルディレクトリをプロジェクト側 → グローバル側の順（Claude Code: `.claude/skills/` → `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.agents/skills/`。他ハーネス用のディレクトリは探さない）。見つからない場合は経路③へ縮退し、復旧手順 `npx skills add tmstack-io/agent-skills --skill tui-harness` を報告に添える。見つかった場合は次の全条件を満たすときに成立する:
    - `mux.sh detect` が検証済みバックエンドを返す。返らなければ経路③へ縮退する。
    - 実行中（著者側）のモデル系統を tui-harness「異系統委譲」の実行中の系統の規則で確定する（Claude Code / codex 等の単一系統ハーネスでは静的に確定し、確認は不要。特定できなければ散文提示でユーザーに確認する）。
    - `catalog.sh probe` が ok かつ `catalog.sh models <CLI名>` でモデル一覧を取得できるハーネスから、`--cli` が無ければ散文提示で1体を選んでもらう。この候補が1つも無ければ経路③へ縮退する。明示指定されたハーネスがいずれかの条件を満たさなければ、縮退せず理由と復旧方法を示して中止する。

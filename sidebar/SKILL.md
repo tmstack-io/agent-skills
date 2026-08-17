@@ -29,7 +29,7 @@ argument-hint: "[--cli <CLI名>[=<モデル>[@<エフォート>]]] <相談した
 
 ## tui-harness 参照
 
-ペイン操作・委譲の共通手順は tui-harness を正本とする。作業を始める前に tui-harness の SKILL.md を次の順で探して Read し、このコンテキスト内で適用する — (1) `../tui-harness/SKILL.md`、(2) 実行ハーネス自身のスキルディレクトリをプロジェクト側 → グローバル側の順（Claude Code: `.claude/skills/` → `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.codex/skills/`。他ハーネス用のディレクトリは探さない）。見つからない場合は相談を開始せず、復旧手順（`npx skills add tmstack-io/agent-skills --skill tui-harness`）を案内して中止する。
+ペイン操作・委譲の共通手順は tui-harness を正本とする。作業を始める前に tui-harness の SKILL.md を次の順で探して Read し、このコンテキスト内で適用する — (1) `../tui-harness/SKILL.md`、(2) 実行ハーネス自身のスキルディレクトリをプロジェクト側 → グローバル側の順（Claude Code: `.claude/skills/` → `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.agents/skills/`。他ハーネス用のディレクトリは探さない）。見つからない場合は相談を開始せず、復旧手順（`npx skills add tmstack-io/agent-skills --skill tui-harness`）を案内して中止する。
 
 本スキルは tui-harness の**片道委譲**を明示して適用する。呼び出しパラメータは成果物置き場（手順3で作る一時ディレクトリ）のみ。候補の検証とモデル系統の確定には tui-harness の「異系統委譲」を適用し、同節手順3の同系統の扱いは本スキルでは手順2の**同系統は起用しない**が定める。受理の再送上限は tui-harness の規定に従い、超えたら中止して原因を報告する。
 

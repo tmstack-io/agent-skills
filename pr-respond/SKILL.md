@@ -64,7 +64,7 @@ stash による退避（検証 NG の修正を残す目的の 1 件を除く）�
    `pr-comment/partial-application-contract.md`（公開整形契約の正本）を探して Read する —
    (1) 本スキルの隣（`../pr-comment/partial-application-contract.md`）、(2) 実行ハーネスの
    スキルディレクトリのプロジェクト側 → グローバル側（Claude Code: `.claude/skills/` →
-   `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.codex/skills/`。他ハーネス用の
+   `~/.claude/skills/`、Codex: `.agents/skills/` → `~/.agents/skills/`。他ハーネス用の
    ディレクトリは探さない）。どこにも無ければ、導入手順
    （`npx skills add tmstack-io/agent-skills --skill pr-comment`）を案内して中止する。
    続けて、同ファイルの「整形スキルの解決手順」に従って `publish-polish/SKILL.md` と
