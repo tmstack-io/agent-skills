@@ -1,7 +1,7 @@
 # 公開整形契約（正本）
 
-pr-comment / pr-recheck が投稿文面を**公開整形**（publish-polish → plainify の2段の逐次適用）
-するときの共通規定。両スキルはこのファイルを参照する。各スキル固有の三点宣言
+pr-comment / pr-recheck / pr-respond が投稿文面を**公開整形**（publish-polish → plainify の2段の
+逐次適用）するときの共通規定。各スキルはこのファイルを参照する。各スキル固有の三点宣言
 （想定読者・配布形態・約束するもの）・適用要点・保護対象の列挙は各 SKILL.md 側にあり、
 本契約には含まれない。
 
