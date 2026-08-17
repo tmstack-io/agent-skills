@@ -1,0 +1,5 @@
+interface:
+  display_name: "PR Respond"
+  short_description: "自分の PR に付いたレビュー指摘を対処判定し承認後に修正・push・返信を投稿"
+policy:
+  allow_implicit_invocation: false
