@@ -55,7 +55,7 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 | session-to-prompt | セッションの決定事項から宛先別の自己完結実装プロンプトを生成 |
 | sidebar | 実行中と別系統のモデルへセッションの文脈を添えて問いを投げ、以後の壁打ちをそのペインでユーザーに引き渡す別席相談（TUI マルチプレクサ環境専用。片道委譲・1席・工程非依存。前回のペインが生きていれば差分だけを添えて追問できる） |
 | skill-feedback | 同一セッションで実際に使ったスキルの実行の証跡（逸脱・補完・介入・空振り）から問題点を洗い出し、汎化テストを通った修正だけを承認後に SKILL.md へ適用（skill-refine の静的査読と別系統のセッション駆動改善。汎化の地平は対象の適用範囲で切替 — `--myself` でハーネス軸、`--project` でプロジェクト軸を免除） |
-| skill-refine | 既存スキルの査読→承認→洗練を行うメタスキル（点検は独立3体の多重点検で過半数指摘のみ正規受理。craft 基準は writing-great-skills（`mattpocock/skills`）を正本として適用。既定は汎用スキル基準。`--myself` で実行ハーネス専用基準、`--project` でプロジェクト専用基準に切り替え） |
+| skill-refine | 既存スキルの査読→承認→洗練を行うメタスキル（点検は独立3体の多重点検で過半数指摘のみ正規受理。craft 基準は writing-great-skills（`mattpocock/skills`）を正本として適用。既定は汎用スキル基準。`--myself` で実行ハーネス専用基準、`--project` でプロジェクト専用基準に切り替え。`--auto [推奨|must|全件]` で承認範囲を指定値で自動確定して無人で周回（`--max N` で上限、既定5）） |
 | slack-research | プロジェクトに紐づく Slack ワークスペースの読み取り専用調査（`.slack-research-env` の User Token で curl から Web API を直接呼ぶ。MCP 不要・複数ワークスペースはプロジェクト毎のトークンで切り替え） |
 | smart-commit | 未コミット変更を論理単位の atomic コミットへ自動分割・登録（規約検出・単位ごと軽量検証つき） |
 | solista | 編成1の concertino — 単独奏者へ指定ロールを配役するセッションモード（固定既定なし・指揮者と異系統のモデルが必須） |
