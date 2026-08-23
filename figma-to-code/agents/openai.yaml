@@ -1,0 +1,3 @@
+interface:
+  display_name: "Figma to Code"
+  short_description: "Figma デザインを対応表と一括キャッシュとスクリーンショット照合ループで 1:1 実装する"
