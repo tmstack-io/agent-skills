@@ -30,6 +30,7 @@ set -u -o pipefail
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 CLAUDE_MODELS_FILE="$SCRIPT_DIR/models/claude.txt"
 CLAUDE_EFFORTS_FILE="$SCRIPT_DIR/models/claude-efforts.txt"
+HERMES_CACHE_FILE="${HOME}/.hermes/provider_models_cache.json"
 
 TIMEOUT_BIN=$(command -v gtimeout || command -v timeout) || {
   echo "timeout 未導入 (macOS は brew install coreutils)" >&2
@@ -94,6 +95,23 @@ models_grok() {
     || { echo "$(printf '%s' "$out" | grep -im1 'error\|log' || echo '疎通失敗')" >&2; return 1; }
   parsed=$(printf '%s\n' "$out" | grep -E '^\s+\*' | awk '{print $2}')
   [ -n "$parsed" ] || { echo "モデル一覧の解析に失敗（grok models の出力形式変更の可能性）" >&2; return 1; }
+  printf '%s\n' "$parsed"
+}
+
+models_hermes() {
+  command -v hermes >/dev/null 2>&1 || { echo "hermes 未導入" >&2; return 1; }
+  command -v jq >/dev/null 2>&1 || { echo "jq 未導入のためモデル一覧を取得できない" >&2; return 1; }
+  [ -r "$HERMES_CACHE_FILE" ] \
+    || { echo "hermes のモデルキャッシュを読めない: $HERMES_CACHE_FILE（hermes model で一度取得する）" >&2; return 1; }
+  local custom_keys parsed
+  # custom プロバイダはキャッシュキーの URL を捨てて custom: 接頭辞へ写像する。
+  # 複数の custom キーがあると custom:<モデル> 形が一意にならないため fail fast。
+  custom_keys=$(jq -r 'keys[] | select(startswith("custom:"))' "$HERMES_CACHE_FILE" 2>/dev/null | grep -c . || true)
+  [ "${custom_keys:-0}" -le 1 ] \
+    || { echo "custom プロバイダが複数キャッシュされており custom:<モデル> 形が一意にならない（未対応）" >&2; return 1; }
+  parsed=$(jq -r 'to_entries[] | (if (.key | startswith("custom:")) then "custom" else .key end) as $p | .value.models[]? | "\($p):\(.)"' "$HERMES_CACHE_FILE" 2>&1) \
+    || { echo "モデルキャッシュの解析に失敗: $(printf '%s' "$parsed" | head -n1)" >&2; return 1; }
+  [ -n "$parsed" ] || { echo "モデルキャッシュが空" >&2; return 1; }
   printf '%s\n' "$parsed"
 }
 
@@ -178,6 +196,18 @@ family_claude() {
   printf 'claude\n'
 }
 
+family_hermes() {
+  # <プロバイダ>: 接頭辞と OpenRouter 型の <ベンダー>/ 接頭辞を剥いでから共通抽出に渡す。
+  local spec model
+  spec=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')
+  case "$spec" in
+    *:*) model=${spec#*:} ;;
+    *) echo "hermes のモデル指定は <プロバイダ>:<モデル> 形が必須: $1" >&2; return 1 ;;
+  esac
+  model=${model##*/}
+  model_family "$model"
+}
+
 # --- 起動指定の検証（一覧照合と CLI 固有設定の許容値） ---
 
 validate_codex() {
@@ -252,6 +282,20 @@ validate_grok() {
     || { echo "指定可能モデルの一覧にない値: $spec" >&2; return 1; }
 }
 
+validate_hermes() {
+  local spec=$1 listed
+  case "$spec" in
+    *@*) echo "TUI 起用で reasoning effort を設定できない CLI: hermes（--tui は --reasoning を無視する。@ 指定を外す）" >&2; return 1 ;;
+  esac
+  case "$spec" in
+    *:*) : ;;
+    *) echo "hermes のモデル指定は <プロバイダ>:<モデル> 形が必須: $spec（候補は catalog.sh models hermes）" >&2; return 1 ;;
+  esac
+  listed=$(models_hermes) || return 1
+  printf '%s\n' "$listed" | grep -Fxq "$spec" \
+    || { echo "指定可能モデルの一覧にない値: $spec" >&2; return 1; }
+}
+
 # --- 疎通確認（probe の1行は models_* の成否と CLI 固有の注記から組み立てる） ---
 
 join_lines() { paste -sd, -; }
@@ -314,6 +358,20 @@ probe_grok() {
   fi
 }
 
+probe_hermes() {
+  command -v hermes >/dev/null 2>&1 || { printf 'hermes\texcluded\t未導入\n'; return; }
+  local out newest age_days
+  local note='モデル指定必須（<プロバイダ>:<モデル> 形。既定モデルでの起用経路なし・@ エフォート指定は非対応）'
+  if out=$(models_hermes 2>&1); then
+    newest=$(jq -r '[.[].at] | max | floor' "$HERMES_CACHE_FILE" 2>/dev/null)
+    age_days=$(( ($(date +%s) - ${newest:-0}) / 86400 ))
+    printf 'hermes\tok\tmodels: %s ／ キャッシュ取得から%s日（更新は hermes model --refresh）／ %s\n' \
+      "$(printf '%s\n' "$out" | join_lines)" "$age_days" "$note"
+  else
+    printf 'hermes\texcluded\t%s\n' "$(printf '%s' "$out" | head -n1 | cut -c1-160)"
+  fi
+}
+
 case "${1:-}" in
   probe)
     probe_codex
@@ -321,6 +379,7 @@ case "${1:-}" in
     probe_agy
     probe_claude
     probe_grok
+    probe_hermes
     ;;
   models)
     [ $# -eq 2 ] || { echo "usage: catalog.sh models <cli>" >&2; exit 2; }
@@ -330,6 +389,7 @@ case "${1:-}" in
       agy)          models_agy ;;
       claude)       models_claude ;;
       grok)         models_grok ;;
+      hermes)       models_hermes ;;
       *) echo "カタログ外の CLI: $2（probe/models に分岐を追加し、transports を検証してから使う）" >&2; exit 2 ;;
     esac
     ;;
@@ -341,6 +401,7 @@ case "${1:-}" in
       agy)          model_family "$3" ;;
       claude)       family_claude ;;
       grok)         model_family "$3" ;;
+      hermes)       family_hermes "$3" ;;
       *) echo "カタログ外の CLI: $2（モデル系統を確定できない）" >&2; exit 2 ;;
     esac
     ;;
@@ -352,6 +413,7 @@ case "${1:-}" in
       agy)          validate_agy "$3" ;;
       claude)       validate_claude "$3" ;;
       grok)         validate_grok "$3" ;;
+      hermes)       validate_hermes "$3" ;;
       *) echo "カタログ外の CLI: $2（モデル指定を検証できない）" >&2; exit 2 ;;
     esac
     ;;
