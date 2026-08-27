@@ -51,11 +51,11 @@ _Avoid_: 成果物（多義で曖昧）、セッションファイル
 _Avoid_: モデル（モデルはエージェントの構成要素）、ハーネス
 
 **ハーネス**:
-エージェントを駆動する対話型 LLM CLI ソフトウェア（Claude Code / codex / cursor-agent / agy / grok 等。実行中の自分が載っているものを含む）。ツール・スキルディレクトリ・サブエージェント機構・承認ダイアログはハーネスに属する。ペインへの委譲先を指すときは「委譲先ハーネス」等と修飾する。TUI ペインでの起用手順の正本は tui-harness。裸のハーネス名（codex / grok 等）はハーネスを指すのが既定で、モデルを指すときは「実効モデル」等で明示する。
+エージェントを駆動する対話型 LLM CLI ソフトウェア（Claude Code / codex / cursor-agent / agy / grok / hermes 等。実行中の自分が載っているものを含む）。ツール・スキルディレクトリ・サブエージェント機構・承認ダイアログはハーネスに属する。ペインへの委譲先を指すときは「委譲先ハーネス」等と修飾する。TUI ペインでの起用手順の正本は tui-harness。裸のハーネス名（codex / grok 等）はハーネスを指すのが既定で、モデルを指すときは「実効モデル」等で明示する。
 _Avoid_: エージェント、CLI ツール
 
 **CLI名**:
-ハーネスをカタログ・フラグ値・push ラベル等の識別子文脈で指す機械可読な名前（`catalog.sh` の第一引数。codex / cursor-agent / agy / claude / grok）。散文の主語には「ハーネス」を使い、引数・ラベルの placeholder には「CLI名」を使う。正本は tui-harness のカタログ。
+ハーネスをカタログ・フラグ値・push ラベル等の識別子文脈で指す機械可読な名前（`catalog.sh` の第一引数。codex / cursor-agent / agy / claude / grok / hermes）。散文の主語には「ハーネス」を使い、引数・ラベルの placeholder には「CLI名」を使う。正本は tui-harness のカタログ。
 _Avoid_: ハーネスID、CLI ツール名
 
 **モデル系統**:

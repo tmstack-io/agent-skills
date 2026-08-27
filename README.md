@@ -60,7 +60,7 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 | slack-research | プロジェクトに紐づく Slack ワークスペースの読み取り専用調査（`.slack-research-env` の User Token で curl から Web API を直接呼ぶ。MCP 不要・複数ワークスペースはプロジェクト毎のトークンで切り替え） |
 | smart-commit | 未コミット変更を論理単位の atomic コミットへ自動分割・登録（規約検出・単位ごと軽量検証つき） |
 | solista | 編成1の concertino — 単独奏者へ指定ロールを配役するセッションモード（固定既定なし・指揮者と異系統のモデルが必須） |
-| tui-harness | TUI マルチプレクサのペインで他 LLM ハーネス（codex / cursor-agent / agy / claude / grok）を起動・委譲・回収する基盤（`mux.sh` / `catalog.sh` / モデル系統の照合 / ハーネス別 transports。現行バックエンド herdr） |
+| tui-harness | TUI マルチプレクサのペインで他 LLM ハーネス（codex / cursor-agent / agy / claude / grok / hermes）を起動・委譲・回収する基盤（`mux.sh` / `catalog.sh` / モデル系統の照合 / ハーネス別 transports。現行バックエンド herdr） |
 
 ## スキル間の依存
 
