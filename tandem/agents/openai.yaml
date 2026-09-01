@@ -1,0 +1,5 @@
+interface:
+  display_name: "Tandem"
+  short_description: "著者（実行エージェント）が課題を進めながら、相談役ハーネス1ペインとの指摘・意見の往復を収束まで中継する二人三脚協働"
+policy:
+  allow_implicit_invocation: false
