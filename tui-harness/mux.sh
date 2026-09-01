@@ -44,6 +44,10 @@ detect_backend() {
     return 0
   fi
   if [ -n "${CMUX_SOCKET_PATH:-}" ] && command -v cmux >/dev/null 2>&1 && cmux ping >/dev/null 2>&1; then
+    if ! command -v python3 >/dev/null 2>&1; then
+      echo "cmux: 検出したが python3 が無いため未対応（cmux バックエンドの split / agent-wait / list / tabs が python3 を必要とする。導入例: brew install python3）" >&2
+      return 1
+    fi
     echo cmux
     return 0
   fi
@@ -259,6 +263,13 @@ PY
         until_state=""
         if [ "$1" = "--until" ]; then until_state=$2; shift 2; fi
         [ $# -eq 1 ] || { echo "usage: mux.sh agent-wait <ペインID> [--until <状態>] <タイムアウトms>" >&2; exit 2; }
+        case "$until_state" in
+          ""|working|idle) : ;;
+          *)
+            echo "agent-wait: cmux バックエンドで意味を持つ --until は working / idle のみ（done / blocked への到達は確認できない。--until なしで発火させ、画面を読んで三分類する）: $until_state" >&2
+            exit 2
+            ;;
+        esac
         timeout_ms=$1
         quiet_s=$(( (${MUX_CMUX_QUIET_MS:-15000} + 999) / 1000 ))
         start=$(date +%s)
