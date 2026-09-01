@@ -22,7 +22,7 @@ hermes --tui -m '<モデル>' --provider '<プロバイダ>' --in '<プロジェ
 ## エージェント検知と受理判定
 
 - エージェント名 `hermes`。**`agent_session` は報告されない**（実測）— 受理完了の判定に `agent_session` は使わず、working 遷移＋（未遷移時は）../SKILL.md の「タスクの委譲」手順3の二分で判定する。
-- 起動直後の `agent_not_found` レース（../SKILL.md「ペインの起動」手順5の再実行で対処）は hermes でも実測した事象である。
+- 起動直後の `agent_not_found` レース（../SKILL.md「ペインの起動」の起動シーケンスに含まれる再実行で対処）は hermes でも実測した事象である。
 
 ## 権限モデル
 
