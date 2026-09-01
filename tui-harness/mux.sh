@@ -25,6 +25,9 @@
 #       --until なしは idle / done / blocked のいずれかで発火する（pull 安全網用）。
 #   mux.sh close <ペインID>
 #   mux.sh list                                  … 全ペインの一覧 JSON
+#   mux.sh tabs                                  … 全タブの一覧 JSON（tab_id と label。
+#       ペイン一覧はタブ名を持たないため、タブ名での指定は tabs の label→tab_id を
+#       list の tab_id へ突き合わせて解決する）
 #   mux.sh layout                                … フォーカス中タブのレイアウト JSON
 #
 # バックエンドの追加: 対話 TUI での実測検証（分割・送信・読み取り・エージェント状態
@@ -50,7 +53,7 @@ extract_pane_id() {
 
 cmd=${1:-}
 [ -n "$cmd" ] || {
-  echo "usage: mux.sh detect|split|run|send|key|read|wait-output|agent-wait|close|list|layout ..." >&2
+  echo "usage: mux.sh detect|split|run|send|key|read|wait-output|agent-wait|close|list|tabs|layout ..." >&2
   exit 2
 }
 shift
@@ -118,6 +121,9 @@ case "$BACKEND" in
         ;;
       list)
         herdr pane list
+        ;;
+      tabs)
+        herdr tab list
         ;;
       layout)
         herdr pane layout
