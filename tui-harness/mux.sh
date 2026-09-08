@@ -330,10 +330,11 @@ print(1 if any(n.get("surface_id") == pane and n["id"] not in base for n in ns) 
       self)
         # CMUX_SURFACE_ID / CMUX_WORKSPACE_ID（cmux が端末へ自動設定する env）から
         # 自ペインを組み立てる。未設定（cmux 端末外・旧バージョン）は fail fast。
+        # tab_id はワークスペース ID を充てる（cmux 分岐の list / tabs と同じ ID 空間）。
         [ -n "${CMUX_SURFACE_ID:-}" ] && [ -n "${CMUX_WORKSPACE_ID:-}" ] \
           || { echo "self: CMUX_SURFACE_ID / CMUX_WORKSPACE_ID が未設定のため自ペインを特定できない（cmux 端末内での実行が前提）" >&2; exit 1; }
         printf '{"result":{"pane":{"pane_id":"%s","tab_id":"%s","workspace_id":"%s"},"type":"pane_current"}}\n' \
-          "$CMUX_SURFACE_ID" "${CMUX_TAB_ID:-$CMUX_WORKSPACE_ID}" "$CMUX_WORKSPACE_ID"
+          "$CMUX_SURFACE_ID" "$CMUX_WORKSPACE_ID" "$CMUX_WORKSPACE_ID"
         ;;
       list)
         python3 - <<'PY'
@@ -393,7 +394,10 @@ print(json.dumps({"result": {"tabs": [{"tab_id": w["id"], "label": name(w), "wor
                              "type": "tab_list"}}, ensure_ascii=False))'
         ;;
       layout)
-        cmux list-panes --json
+        # 自ワークスペースへ固定する（引数なしのスコープは未確認のため使わない）。
+        [ -n "${CMUX_WORKSPACE_ID:-}" ] \
+          || { echo "layout: CMUX_WORKSPACE_ID が未設定のため自ワークスペースを特定できない（cmux 端末内での実行が前提）" >&2; exit 1; }
+        cmux list-panes --workspace "$CMUX_WORKSPACE_ID" --json
         ;;
       *)
         echo "不明なサブコマンド: $cmd" >&2
