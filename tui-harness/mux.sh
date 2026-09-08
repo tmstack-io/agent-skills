@@ -5,7 +5,7 @@
 #
 # バックエンド: herdr（0.7 系コマンド形・検証済み）と cmux（0.64 系・検証済み。要 python3。
 # ペイン ID = surface UUID。agent-wait は画面静止推定＋通知高速経路で代替し、agent_session は
-# 報告しない。詳細は SKILL.md「マルチプレクサ」節のバックエンド差分）。tmux は未検証のため
+# 報告しない。詳細は backends/cmux.md）。tmux は未検証のため
 # 未対応（detect が検出した場合は stderr に表示だけする）。
 #
 # 使い方:
@@ -264,11 +264,7 @@ PY
         done
         ;;
       agent-wait)
-        # エージェント状態 API が無いため画面静止推定＋通知高速経路で代替する:
-        #   working = 画面が直近のサンプル間で変化した / idle = MUX_CMUX_QUIET_MS（既定 15000ms）静止、
-        #   または開始後に対象 surface 宛の新着通知（cmux hooks 導入ハーネスのみ発火する高速経路）。
-        #   blocked / done は個別に報告せず idle に含める（呼び出し側の三分類が画面から裁く）。
-        #   agent_session は報告しない（受理判定は working 遷移のみ）。
+        # 画面静止推定＋通知高速経路による代替。仕組みと意味を持つ --until の正本は backends/cmux.md。
         [ $# -ge 2 ] || { echo "usage: mux.sh agent-wait <ペインID> [--until <状態>] <タイムアウトms>" >&2; exit 2; }
         pane=$1; shift
         until_state=""

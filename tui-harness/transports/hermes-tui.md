@@ -39,6 +39,6 @@ hermes --tui -m '<モデル>' --provider '<プロバイダ>' --in '<プロジェ
 
 2026-08-27 実測（hermes 0.20.5 / herdr バックエンド / Claude Code 指揮者、スモーク委譲1件）: `--reasoning medium` 付き TUI 起動でフッターが `high` のままである事象（--reasoning の無視）/ `-m custom:fugu` 丸ごと指定の 404 失敗と `-m fugu --provider custom` 分割指定での正常起動 / trust・初期ダイアログなし / エージェント検知（`hermes`・idle/working/done を観測。`agent_session` は非報告）/ 起動直後の `agent_not_found` レースと数秒後の再実行での解消 / 委譲の受理（working 遷移）/ cwd 内読み取り・cwd 外（成果物置き場）書き込み・シェル実行（push）の無確認実行 / push 到達（1/1）と回答ファイルの検収 / ブリーフ規律の遵守（git 操作なし・指定ファイル以外の書き込みなし）/ reasoning 既定 high のフッター表示（`fugu high`）。
 
-未検証: 承認ダイアログの形式・blocked 遷移（今回の委譲では発生せず。遭遇したら ../SKILL.md「未知ダイアログの遭遇プロトコル」で処理し本書へ追記する）/ 同一ペインへの追送によるラウンド間文脈保持。
+未検証: 承認ダイアログの形式・blocked 遷移（今回の委譲では発生せず。遭遇したら ../SKILL.md「未知ダイアログの遭遇プロトコル」で処理し本書へ追記する）/ 同一ペインへの次の委譲での文脈保持。
 
 改善候補: hermes の将来バージョンで `--tui` が `--reasoning` を受けるようになったら、`@<エフォート>` 対応（validate の許容値照合と起動コマンドへの付加）を追加する。

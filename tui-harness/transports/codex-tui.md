@@ -25,6 +25,6 @@ cwd の trust が `~/.codex/config.toml` に未記録だと、git リポジト�
 
 ## 検証記録
 
-2026-07-30 実測（合議2件・計5ラウンドの実運用）: trust 済みプロジェクトでのダイアログなし起動 / エージェント検知（`codex`・status・session）/ `agent_session` 無し working 応答と pane read 二分での受理確定 / auto_review による書き込み・push の無人裁定 / 完了 push の到達（5/5）/ ラウンド間の同一ペイン追送による文脈保持 / ペイン表示での実測モデル確認（`gpt-5.6-terra max`）。
+2026-07-30 実測（利用スキルからの委譲2件・同一ペインへの追送を含む計5回の実運用）: trust 済みプロジェクトでのダイアログなし起動 / エージェント検知（`codex`・status・session）/ `agent_session` 無し working 応答と pane read 二分での受理確定 / auto_review による書き込み・push の無人裁定 / 完了 push の到達（5/5）/ 同一ペインへの次の委譲での文脈保持 / ペイン表示での実測モデル確認（`gpt-5.6-terra max`）。
 
 2026-08-15 実測（指揮者 = codex のスモーク検証。herdr バックエンド）: codex（on-request + auto_review + workspace-write、cwd はプロジェクト外の一時ディレクトリ）が指揮者として `mux.sh` 全サブコマンド（detect / list / layout / split / run / send / key / read / wait-output / agent-wait / close）を承認要求ゼロで実行 / 内側 codex への委譲 → done push → 回答ファイル回収 → クローズの一巡が成立 / 前面の同期 `agent-wait`（バックグラウンド実行なし）で 240 秒のブロック実行を中断なく完走 / trust ダイアログは指揮者 codex の起用時に表示され `send "1"` ＋ `key Enter` で通過（trust の config.toml への永続記録により、同一 cwd の内側 codex ではダイアログなしの正常分岐）。
