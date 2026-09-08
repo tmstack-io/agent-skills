@@ -26,11 +26,15 @@
 #       ペインのエージェント状態の到達を確定待ちし、状態 JSON を出力する。
 #       --until なしは idle / done / blocked のいずれかで発火する（pull 安全網用）。
 #   mux.sh close <ペインID>
+#   mux.sh self                                  … 本スクリプトを実行しているペイン自身の
+#       情報 JSON（pane_id / tab_id / workspace_id）。自ペイン・自ワークスペースの特定は
+#       必ずこれを使う（list の focused はユーザーが閲覧中のワークスペースのアクティブ
+#       ペインを指すグローバル属性であり、自ペインの特定に使えない）。
 #   mux.sh list                                  … 全ペインの一覧 JSON
 #   mux.sh tabs                                  … 全タブの一覧 JSON（tab_id と label。
 #       ペイン一覧はタブ名を持たないため、タブ名での指定は tabs の label→tab_id を
 #       list の tab_id へ突き合わせて解決する）
-#   mux.sh layout                                … フォーカス中タブのレイアウト JSON
+#   mux.sh layout                                … 自ペインの属するタブのレイアウト JSON
 #
 # バックエンドの追加: 対話 TUI での実測検証（分割・送信・読み取り・エージェント状態
 # 検知・確定待ち）を済ませてから、detect の判定と各サブコマンドの case に
@@ -63,7 +67,7 @@ extract_pane_id() {
 
 cmd=${1:-}
 [ -n "$cmd" ] || {
-  echo "usage: mux.sh detect|split|run|send|key|read|wait-output|agent-wait|close|list|tabs|layout ..." >&2
+  echo "usage: mux.sh detect|split|run|send|key|read|wait-output|agent-wait|close|self|list|tabs|layout ..." >&2
   exit 2
 }
 shift
@@ -132,6 +136,11 @@ case "$BACKEND" in
         [ $# -eq 1 ] || { echo "usage: mux.sh close <ペインID>" >&2; exit 2; }
         herdr pane close "$1"
         ;;
+      self)
+        # HERDR_PANE_ID（herdr がペインのシェルへ注入）を既定対象として自ペインを返す。
+        # ペイン外の実行では herdr 側が失敗し、そのまま非0で返る（fail fast）。
+        herdr pane current
+        ;;
       list)
         herdr pane list
         ;;
@@ -139,7 +148,9 @@ case "$BACKEND" in
         herdr tab list
         ;;
       layout)
-        herdr pane layout
+        # 引数なしの pane layout はユーザーが閲覧中のタブを返すため、--current で
+        # 自ペイン（HERDR_PANE_ID）の属するタブに固定する。
+        herdr pane layout --current
         ;;
       *)
         echo "不明なサブコマンド: $cmd" >&2
@@ -315,6 +326,14 @@ print(1 if any(n.get("surface_id") == pane and n["id"] not in base for n in ns) 
         done
         echo "close: ペインの消滅を確認できない: $1" >&2
         exit 1
+        ;;
+      self)
+        # CMUX_SURFACE_ID / CMUX_WORKSPACE_ID（cmux が端末へ自動設定する env）から
+        # 自ペインを組み立てる。未設定（cmux 端末外・旧バージョン）は fail fast。
+        [ -n "${CMUX_SURFACE_ID:-}" ] && [ -n "${CMUX_WORKSPACE_ID:-}" ] \
+          || { echo "self: CMUX_SURFACE_ID / CMUX_WORKSPACE_ID が未設定のため自ペインを特定できない（cmux 端末内での実行が前提）" >&2; exit 1; }
+        printf '{"result":{"pane":{"pane_id":"%s","tab_id":"%s","workspace_id":"%s"},"type":"pane_current"}}\n' \
+          "$CMUX_SURFACE_ID" "${CMUX_TAB_ID:-$CMUX_WORKSPACE_ID}" "$CMUX_WORKSPACE_ID"
         ;;
       list)
         python3 - <<'PY'
