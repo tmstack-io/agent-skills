@@ -1,6 +1,6 @@
 ---
 name: tandem
-description: 実行エージェントが著者として課題を進めながら、ハーネス1ペインを相談役に立て、指摘・意見の往復を収束まで中継する二人三脚協働（TUI マルチプレクサ環境専用）。
+description: 実行エージェントが課題を進めながら、相談役ペインとの指摘・意見の往復を収束まで中継する二人三脚協働（TUI マルチプレクサ環境専用）。
 disable-model-invocation: true
 argument-hint: "[--cli <CLI名>[=<モデル>[@<エフォート>]] | --pane [<ペイン指定>]] [--max-rounds N（既定5）] <依頼文>"
 ---

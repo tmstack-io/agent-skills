@@ -1,6 +1,6 @@
 ---
 name: skill-feedback
-description: 同一セッションで実際に使ったスキルの実行の証跡から問題点を洗い出し、承認を得て SKILL.md を改善する。「今使ったスキルの問題点を振り返って改善して」などの依頼で使用。
+description: 同一セッションで使ったスキルの実行の証跡から問題点を洗い出し、承認を得て SKILL.md を改善する。「今使ったスキルの問題点を振り返って改善して」などの依頼で使用。
 argument-hint: "[スキル名 or SKILL.md のパス] [--myself | --project]"
 ---
 

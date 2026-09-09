@@ -1,6 +1,6 @@
 ---
 name: maestro
-description: 高性能モデルの実行エージェント本体を非実装の指揮者に固定し、実装・調査を奏者へ委譲させるセッションモード。
+description: 実行エージェント本体を非実装の指揮者に固定し、実装・調査を奏者へ委譲するセッションモード。
 disable-model-invocation: true
 argument-hint: "[--all <値>] [--implement <値>] [--review <値>] [--explore <値>] [--deep | --fast]（値は <model> / <model>@<effort> / @<effort> の3形。--deep=全タスク深査読、--fast=深査読の自動発動を無効化）"
 ---
