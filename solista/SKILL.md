@@ -1,6 +1,6 @@
 ---
 name: solista
-description: セッション中の指定ロール（implement / review / explore）を単独の奏者に配役するセッションモード（編成1の concertino）。
+description: セッション中の指定ロールを単独の奏者に配役するセッションモード。
 disable-model-invocation: true
 argument-hint: "--implement [<値>]|--review [<値>]|--explore [<値>]（1つ以上・併用可。implement×review の併用は不可。値は <CLI名>[=<モデル>[@<エフォート>]] で、値を付けられるロールフラグは最大1つ） [--sandbox <mode>] [--approval <policy>] [--approvals-reviewer <裁定者>]"
 ---

@@ -1,6 +1,6 @@
 ---
 name: smart-commit
-description: 未コミットの変更を論理単位の atomic コミットへ自動分割して登録する（規約検出・単位ごと軽量検証つき）。起動＝コミット実行の許可。ユーザー起動専用。
+description: 未コミットの変更を論理単位の atomic コミットへ分割して登録する。
 disable-model-invocation: true
 ---
 

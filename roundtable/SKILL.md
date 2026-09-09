@@ -1,6 +1,6 @@
 ---
 name: roundtable
-description: 与えられた合議の主題を異系統の3つの LLM（議長系統の固定席＋起動ごとに選ぶ2席）で合議し、確度の高い最終回答に統合する円卓会議（TUI マルチプレクサ環境専用）。
+description: 合議の主題を異系統の3つの LLM で合議し、確度の高い最終回答に統合する円卓会議（TUI マルチプレクサ環境専用）。
 disable-model-invocation: true
 argument-hint: "[--second <CLI名>[=<モデル>[@<エフォート>]]] [--third <CLI名>[=<モデル>[@<エフォート>]]] [--host <モデル>[@<エフォート>]] [--rounds <1〜5>] <質問文 | 同セッションの plan 成果物の指定>"
 ---

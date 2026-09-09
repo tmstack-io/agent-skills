@@ -1,6 +1,6 @@
 ---
 name: concertino
-description: セッション中の指定ロール（implement / review / explore）を複数ハーネス奏者の編成（合計4まで）に配役するセッションモード（TUI マルチプレクサ環境専用）。
+description: セッション中の指定ロールを複数ハーネス奏者の編成に配役するセッションモード（TUI マルチプレクサ環境専用）。
 disable-model-invocation: true
 argument-hint: "--implement [<値>]|--review [<値>]|--explore [<値>]（値は <CLI名>[=<モデル>[@<エフォート>]]。1出現=奏者1人・繰り返し可・併用可。implement×review の併用は不可、奏者合計4まで） [--sandbox <mode>] [--approval <policy>] [--approvals-reviewer <裁定者>]"
 ---
