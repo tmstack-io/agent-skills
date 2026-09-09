@@ -1,0 +1,5 @@
+# iterate-review PR 対象時の前提確認と差分取得（正本）
+
+SKILL.md Step 1 のポインタから、対象が PR（番号または URL）のときに読まれる。
+
+最初に `gh` の存在と認証を確認する（`command -v gh` と `gh auth status`）。不可なら処理を開始せず、導入（Homebrew 環境では `brew install gh`。それ以外は GitHub CLI 公式の導入手順）とログイン（`gh auth login`）を案内して中止する。差分は初回（`--resume` 指定時を除く）のみ `gh pr diff` で取得し、`--resume` 指定時は Round 1 から下記の分岐点比の差分で取る。修正には PR ブランチのチェックアウトが前提で、`gh pr view <番号または URL> --json headRefName` の値と `git branch --show-current` が一致すればチェックアウト済みとみなす（未チェックアウトなら修正に進まず、Round 1 のレビュー結果を提示して SKILL.md Step 5 へ進む — 「PR 未チェックアウト終了」として妥協終了に含める）。修正を行った以降のラウンドは、base ブランチとの分岐点からの差分に切り替えて取り直す — `gh pr diff` はローカルの未 push 修正を含まないため。手順: baseRef は `gh pr view <番号または URL> --json baseRefName` で取得し、base リポジトリの URL（`gh pr view <番号または URL> --json url` の PR URL からリポジトリ部分 `https://github.com/<owner>/<repo>` を取る。fork からの PR でもローカル remote の有無・upstream の設定に依らず一意）から `git fetch <base リポジトリ URL> <baseRef>` し、`git merge-base FETCH_HEAD HEAD` で分岐点を取り、`git diff <分岐点>` ＋未追跡ファイルで取る（`gh pr diff` と同じ分岐点比に揃え、base の進行分を差分に混入させない）。
