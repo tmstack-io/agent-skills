@@ -400,4 +400,6 @@ EOF
   復元手順）
 - 要判断として残した C とその論点（レビュアーへ確認すべき事柄・ユーザーが決めるべき事柄）
 
-完了条件: 上記 5 項が揃い、`git status --porcelain` が空（退避分は stash 内）である。
+報告の直前（途中中止の報告でも同じ）に、返信の整形で作った一時ディレクトリ（契約の第1段。`publish-polish-findings.json`・`publish-polish-backup/` を含む）があれば削除する。
+
+完了条件: 上記 5 項が揃い、`git status --porcelain` が空（退避分は stash 内）で、整形用の一時ディレクトリが残っていない。
