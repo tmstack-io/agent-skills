@@ -22,10 +22,10 @@ skill-refine の点検で適用する査読基準と、指摘一覧の返却フ�
 
 適用表が定める項目を**全項目**適用する。完了条件: 各項目について「指摘あり（箇所と内容）」か「問題なし」かを判定し終えている。
 
-**W. craft** — writing-great-skills 基準
+**W. craft** — writing-for-agents 基準
 
-- writing-great-skills の SKILL.md と GLOSSARY.md を読了してから、そこに定義される全観点（Invocation の選択 / description の書き方 / 情報階層と progressive disclosure / 分割判断 / Pruning / leading words / 失敗モード）を対象スキルに適用する。基準の内容はここに再掲しない（正本は writing-great-skills 側）
-- 指摘には writing-great-skills の術語（premature completion / duplication / no-op 等）をそのまま用いる（和訳で言い換えない）。指摘文面では各術語の初出に一言の日本語説明を添える
+- writing-for-agents の SKILL.md と SKILL-MECHANICS.md を読了してから、そこに定義される全観点（Invocation の選択 / context pointer〔description を含む〕の書き方 / 情報階層と progressive disclosure・co-location / 分割判断 / 完了条件と legwork / leading words と negation / Pruning〔single source of truth・environment を正本とみなす cache の扱い・relevance・no-op〕と、各レバーの隣に置かれた失敗モード）を対象スキルに適用する。基準の内容はここに再掲しない（正本は writing-for-agents 側）
+- 指摘には writing-for-agents の術語（premature completion / duplication / no-op 等）をそのまま用いる（和訳で言い換えない）。指摘文面では各術語の初出に一言の日本語説明を添える
 - description の書き方・progressive disclosure・sprawl・duplication のうち F の条項で二値判定できるものは F として挙げ、W では重ねて挙げない（W は F に条項が無い観点 — Invocation の選択・分割判断・leading words・no-op 等 — に使う）
 
 **A. 公開品質** — 第三者がそのまま使えるか
