@@ -1,10 +1,10 @@
-# decruft 加速オプション: サブエージェント並列バッチ（正本）
+# code-sweep 加速オプション: サブエージェント並列バッチ（正本）
 
 SKILL.md フェーズ3のポインタから読まれる委譲手順の正本。判定基準・対象範囲・返却フォーマットは自己実行時と同一であり、この経路が変えるのは所要時間だけである。委譲と返却の回収は SKILL.md のサブエージェント返却規約に従う。
 
 - **バッチ分割**: 1 バッチ = 最大 10 ファイル、かつ合計 2,000 行程度を目安とする。目安を超える大ファイルは単独バッチにする。全バッチを 1 メッセージで並列起動する（Claude Code では `subagent_type: general-purpose`）。
 - **サブエージェントへのプロンプト構成**: 判定基準の同一性を転記で確定させ、参照解決の失敗・解釈差を排除するため、各バッチのプロンプトには必ず次をすべて含める。
   1. 担当ファイルの絶対パス一覧。
-  2. SKILL.md「判定基準」の `BEGIN DECRUFT-JUDGE-SPEC` 〜 `END DECRUFT-JUDGE-SPEC` 間の本文を **一字一句そのままコピー** する。**セッション生成物を対象とする場合はさらに** `references/judge-spec-session.md` の `BEGIN DECRUFT-JUDGE-SPEC-SESSION` 〜 `END DECRUFT-JUDGE-SPEC-SESSION` 間の本文を続けてコピーする（それ以外では含めない）。
+  2. SKILL.md「判定基準」の `BEGIN CODE-SWEEP-JUDGE-SPEC` 〜 `END CODE-SWEEP-JUDGE-SPEC` 間の本文を **一字一句そのままコピー** する。**セッション生成物を対象とする場合はさらに** `references/judge-spec-session.md` の `BEGIN CODE-SWEEP-JUDGE-SPEC-SESSION` 〜 `END CODE-SWEEP-JUDGE-SPEC-SESSION` 間の本文を続けてコピーする（それ以外では含めない）。
   3. フェーズ2の注意リストのうち担当ファイル分。添え書きとして、SKILL.md フェーズ3冒頭の「grep ヒット行だけに限定しない。フェーズ2の注意リストは取りこぼし防止用であり、各ヒット行を必ず検討する（候補にしない場合は黙って捨ててよい）」をそのまま転記する（正本は SKILL.md フェーズ3冒頭）。
 - **親側**: 全バッチの返却 JSON を結合し、SKILL.md フェーズ3「判定後の後処理」を行う。バッチが失敗した、または返却が JSON 配列として解釈できない場合は、そのバッチの担当ファイルを自己実行（SKILL.md フェーズ3冒頭の手順）で判定し直し、その旨を結果報告に明記する。

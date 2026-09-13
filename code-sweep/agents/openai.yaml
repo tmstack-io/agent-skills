@@ -1,0 +1,3 @@
+interface:
+  display_name: "Code Sweep"
+  short_description: "書きたてのコードから不要なコメント・docstring を検出・削除"
