@@ -35,7 +35,7 @@ publish-polish を **`--auto 全件 --style`** で実行する（Read して同�
 
 - publish-polish の「フロー」は一時ファイルに対して全工程を実行する。「公開の姿の確認」のユーザーへの
   質問は自動承認により行われず、適用するスキル側の**三点宣言**が①〜③の確定値になる。一時ディレクトリ・
-  `publish-polish-findings.json`・`publish-polish-backup/` は、適用スキルの後始末で削除する（後始末の規定が
+  `publish-polish-findings-<日時>.json`・`publish-polish-backup-<日時>/` は、適用スキルの後始末で削除する（後始末の規定が
   無いスキルは投稿の完了または中止の後に削除する）。
 - plainify の言語別規則が規定する整形前のユーザー確認は、`--auto` により行われない（確認事項の
   値は第2段の宣言が正本）。
