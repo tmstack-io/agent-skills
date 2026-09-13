@@ -37,13 +37,14 @@ argument-hint: "[調査したい内容]"
   resp=$(curl -s -D "$hdr" -H "Authorization: Bearer $token" "https://slack.com/api/<method>" ...)
   ```
 
+- **環境ファイルの読み出し**: `.slack-research-env` から値を取り出すときは、必要な1行だけを行頭キーで抽出する（`SLACK_TOKEN` は呼び出しの型の `sed` 行、`SLACK_CHANNELS` は `sed -n 's/^SLACK_CHANNELS=//p' "$env_file"`）。ファイル全体を表示する読み方（`cat`・ファイル読み取りツール）は使わない — 同じファイルのトークン行が出力に載るため、抽出は常に行頭キー指定で行う。
 - **ページネーション**: `response_metadata.next_cursor` が空でない限り、必要な範囲まで `cursor` を付けて辿る（`conversations.list` / `users.list` / 履歴・検索のいずれも同様。1ページ目だけ見て「無い」と判定しない）。
 - **レート制限**: HTTP 429 が返ったら、`$hdr` に記録された `Retry-After` ヘッダの秒数を待って同じ呼び出しを再試行する。
 - **API エラー**: `ok: false` の応答は握りつぶさない。`missing_scope`・`channel_not_found` 等は対象の問いを「確認不能」とし、エラー名と必要な対処（スコープ追加・チャンネル参加等）を報告に載せる。
 
 ## Step 1: 調査スコープの解決
 
-`.slack-research-env` の任意行 `SLACK_CHANNELS`（書式の正本は `SETUP.md` 手順3）を解釈する:
+共通規定の環境ファイルの読み出しで `.slack-research-env` の任意行 `SLACK_CHANNELS`（書式の正本は `SETUP.md` 手順3）の値を取り出し、次のとおり解釈する:
 
 - **未指定**: トークンで見える範囲すべて（公開・プライベートチャンネル・DM・グループDM）を対象にする。
 - **指定あり**: カンマ区切りの各項目を既定スコープにする。`#名前` はチャンネル（`conversations.list` の `types=public_channel,private_channel` で名前→ID 解決）、`@名前` は 1対1 DM の相手（`users.list` で表示名・実名から user ID を特定し、`conversations.list` の `types=im` の `user` フィールドで DM チャンネル ID に解決）。`#` `@` のどちらでも始まらない項目が1件でもあれば書式不正として中止し、その項目と `SETUP.md` 手順3の書式を報告する。表示名・実名の一致が2件以上ある `@名前` は解決失敗として扱い、一致した候補（表示名・実名・user ID）を報告に載せる。**1件でも解決できない名前があれば中止**し、どの名前が解決できなかったかを報告する（黙って除外して続行しない）。
