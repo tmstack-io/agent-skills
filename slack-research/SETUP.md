@@ -29,7 +29,7 @@
    ```sh
    # 必須
    SLACK_TOKEN=xoxp-...
-   # 任意: 既定の調査範囲を絞る（未指定なら全チャンネル・DM 横断）
+   # 任意: 既定の調査範囲を絞る（解釈は SKILL.md の Step 1）
    SLACK_CHANNELS=#general,#proj-x,@yamada
    ```
 
