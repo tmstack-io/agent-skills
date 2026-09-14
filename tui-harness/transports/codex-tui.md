@@ -10,9 +10,9 @@ codex をペインで起用するときのハーネス固有差分。共通手�
 codex --sandbox workspace-write -c approval_policy=on-request -c approvals_reviewer=auto_review -C '<プロジェクトルート>'
 ```
 
-- **sandbox は `workspace-write`**: read-only は回答ファイルの書き出しと通信規約の push まで遮断するため使わない。書き込みの遮断はブリーフの規律が担う。
+- **sandbox は `workspace-write`**: read-only は回答ファイルの書き出しと通信規約の push まで遮断するため使わない。workspace-write はワークスペース全域への書き込みを通す（防御の正本は ../SKILL.md「呼び出しパラメータ」の裁定スコープ項）。
 - **`on-request` ＋ `auto_review`**: 承認要求（sandbox 昇格・MCP ツール承認等）を codex のリスク評価サブエージェントに自動裁定させる公式機構で、無人運用の成立要件。`never` は承認要求を裁定に乗せないため使わない。
-- 呼び出し側がモデルを指定した場合のみ付加する: `-m <slug>`、effort 付き（`<slug>@<effort>` 解決時）はさらに `-c model_reasoning_effort=<effort>`。省略時は `~/.codex/config.toml` の既定。実測モデル名はペイン下部の表示（例: `gpt-5.6-terra max`）で確認できる（利用スキル側の実測記録の追記等、指定と実効の照合に使う）。モデル名は TUI 起動時に検証されず、誤指定は最初のターンで API エラーとして顕在化する（`catalog.sh validate codex` による事前検証が呼び出し側の規定）。
+- ../SKILL.md「委譲先の確定と検証」で確定したモデルを必ず付加する: `-m <slug>`、effort 付き（`<slug>@<effort>` 解決時）はさらに `-c model_reasoning_effort=<effort>`。実測モデル名はペイン下部の表示（例: `gpt-5.6-terra max`）で確認できる（利用スキル側の実測記録の追記等、指定と実効の照合に使う）。モデル名は TUI 起動時に検証されず、誤指定は最初のターンで API エラーとして顕在化する（`catalog.sh validate codex` による事前検証が呼び出し側の規定）。
 
 ## trust ダイアログ
 
@@ -20,7 +20,7 @@ cwd の trust が `~/.codex/config.toml` に未記録だと、git リポジト�
 
 ## エージェント検知と受理判定
 
-- エージェント名 `codex`。`agent_session`（codex セッション ID）を報告する — 受理完了の判定は ../SKILL.md の「タスクの委譲」手順2の本則（working ＋ `agent_session`）に従う。**`agent_session` 無しの working 応答は実測で発生する** — その場合は同手順3の二分（`mux.sh read` で実作業を確認）で受理を確定する。
+- エージェント名 `codex`。`agent_session`（codex セッション ID）を報告する — 受理完了の判定は ../SKILL.md の「タスクの委譲」手順2の本則（working ＋ `agent_session`）に従う。**`agent_session` 無しの working 応答は実測で発生する** — その場合は同手順3の「作業表示がある → 受理完了」の分岐で受理を確定する。
 - 完了後に done を報告せず idle に戻るだけのことがある（実測）— pull 安全網は ../SKILL.md の規定どおり `--until` 無しで張る。
 
 ## 検証記録
