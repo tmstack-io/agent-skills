@@ -10,9 +10,9 @@ Claude Code の `claude` CLI をペインで起用するときのハーネス固
 cd '<プロジェクトルート>' && claude --permission-mode acceptEdits --model '<モデルID>'
 ```
 
-- **モデル ID は必須**: `catalog.sh models claude` が返す `models/claude.txt` 掲載 ID を指定する。Claude CLI からモデル一覧を正確に取得できないため、`opus` / `sonnet` / `fable` 等の可変別名と未掲載 ID は使わない。
+- **モデル ID は必須**: `catalog.sh models claude` が返す `models/claude.txt` 掲載 ID を指定する。Claude CLI からモデル一覧を正確に取得できないため、`opus` / `sonnet` / `fable` 等の可変別名と未掲載 ID は使わない。末尾に `[1m]` が付いた指定（1M トークンコンテキスト版）は、`[1m]` を除いた部分が掲載 ID なら元の値のまま `--model` に渡す。
 - 呼び出し側が reasoning effort を指定した場合は `--effort <level>` を付加する（effort は実行設定であり、モデル系統の照合には含めない）。
-- **`acceptEdits`**: 成果物ファイルの作成・編集を受理し、シェル実行等の追加承認は共通手順の指揮者裁定へ送る。全面的な権限バイパスは使わない。ただし `acceptEdits` はプロジェクト全域のファイル編集を自動受理するため、**書き込みの遮断はブリーフの規律（成果物置き場にのみ書く）が第一の防御**である（codex の workspace-write と同じ扱い）。
+- **`acceptEdits`**: 成果物ファイルの作成・編集を受理し、シェル実行等の追加承認は共通手順の指揮者裁定へ送る。全面的な権限バイパスは使わない。`acceptEdits` はプロジェクト全域のファイル編集を自動受理する（成果物置き場外への書き込みを遮断しない。防御の正本は ../SKILL.md「呼び出しパラメータ」の裁定スコープ項）。
 
 ## trust ダイアログ
 
