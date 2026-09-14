@@ -1,5 +1,3 @@
 interface:
   display_name: "Plainify"
   short_description: "AI 出力の難解な文章を平易化リライト（言語別規則対応）"
-policy:
-  allow_implicit_invocation: false
