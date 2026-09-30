@@ -26,8 +26,12 @@
 
 `self` は `CMUX_SURFACE_ID` / `CMUX_WORKSPACE_ID`（cmux が端末のシェルへ自動設定する env。名称の根拠は cmux CLI ヘルプの Environment 節）から組み立てる — どちらかが未設定なら非0終了し、呼び出し側はSKILL.md「ペイン配置」手順1と `existing-pane.md` 手順1の self 非0分岐に従う。self の `tab_id` にはワークスペース ID を充てる（list / tabs と同じ ID 空間に統一）。`layout` は自ワークスペースへ固定するため `--workspace` に `CMUX_WORKSPACE_ID` を渡す（未設定なら非0終了）。
 
+## (6) submit / answer / close の消滅確認
+
+`mux.sh submit`（出現確認 → Enter → 入力欄の変化確認）と `answer` はバックエンド共通の実装で、cmux では `send` / `wait-output` / `read` / `send-key enter` を組み合わせて動く。エージェント状態 API が無いため、`submit` の送信済み判定は画面の変化のみで行う（herdr が併用する working 遷移の判定は無い）。`wait-output` の文字列はリテラルの部分一致（herdr の `--match` と同じ。2026-09-15 に正規表現一致から統一）。
+
 ## 実測範囲と未実測
 
 cmux での実測範囲: mux.sh 全サブコマンド（`self` と、`layout` の自ワークスペース固定を除く）、codex / grok の委譲一巡（起動・trust 通過・受理・完了検知・回収・クローズ）、委譲先（codex）自身による通信規約の push 送達。
 
-未実測: `self`（env 組み立ての cmux セッション内動作）、`layout` の自ワークスペース固定（`--workspace` 指定での挙動）、blocked（承認ダイアログ）場面の安全網検知と裁定、既存ペインの起用（`existing-pane.md`）の cmux 代替判定（`commands` 照合・短時間 idle 判定）、claude / cursor-agent / agy / hermes の各初期ダイアログ（transports の実測記録は herdr 指揮者のもの）。
+未実測: `submit` / `answer` と `wait-output` のリテラル一致化（2026-09-15 の変更。herdr でのみ実測）、`self`（env 組み立ての cmux セッション内動作）、`layout` の自ワークスペース固定（`--workspace` 指定での挙動）、blocked（承認ダイアログ）場面の安全網検知と裁定、既存ペインの起用（`existing-pane.md`）の cmux 代替判定（`commands` 照合・短時間 idle 判定）、claude / cursor-agent / agy / hermes の各初期ダイアログ（transports の実測記録は herdr 指揮者のもの）。

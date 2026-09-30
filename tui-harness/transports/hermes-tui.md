@@ -21,7 +21,7 @@ hermes --tui -m '<モデル>' --provider '<プロバイダ>' --in '<プロジェ
 
 ## エージェント検知と受理判定
 
-- エージェント名 `hermes`。**`agent_session` は報告されない**（実測）— 受理完了の判定に `agent_session` は使わず、working 遷移＋（未遷移時は）../SKILL.md の「タスクの委譲」手順3の三分で判定する。
+- エージェント名 `hermes`。**`agent_session` は報告されない**（実測）— 受理完了の判定に `agent_session` は使わず、working 遷移＋（未遷移時は）../SKILL.md の「タスクの委譲」手順3の二分で判定する。
 - 起動直後の `agent_not_found` レース（../SKILL.md「ペインの起動」の起動シーケンスに含まれる再実行で対処）は hermes でも実測した事象である。
 
 ## 権限モデル
@@ -36,6 +36,8 @@ hermes --tui -m '<モデル>' --provider '<プロバイダ>' --in '<プロジェ
 - 起動時に自前の skills・toolsets・memory を注入する（起動画面に表示）。素の起動で起用し、干渉が観測されたら本書に追記する。
 
 ## 検証記録
+
+2026-09-15 実測（指揮者 = Claude Code、herdr バックエンド。`mux.sh submit` の導入検証、ADR 0015）: `-m fugu --provider custom` で起動、`submit` 1 回で送信（送信エコー `❯` を確認）。ただし実測環境の hermes が「Setup Required: needs a model provider」を表示して返答を返さなかった（provider 設定の問題。`submit` の送信自体は成立）。`close` の消滅確認。
 
 2026-08-27 実測（hermes 0.20.5 / herdr バックエンド / Claude Code 指揮者、スモーク委譲1件）: `--reasoning medium` 付き TUI 起動でフッターが `high` のままである事象（--reasoning の無視）/ `-m custom:fugu` 丸ごと指定の 404 失敗と `-m fugu --provider custom` 分割指定での正常起動 / trust・初期ダイアログなし / エージェント検知（`hermes`・idle/working/done を観測。`agent_session` は非報告）/ 起動直後の `agent_not_found` レースと数秒後の再実行での解消 / 委譲の受理（working 遷移）/ cwd 内読み取り・cwd 外（成果物置き場）書き込み・シェル実行（push）の無確認実行 / push 到達（1/1）と回答ファイルの検収 / ブリーフ規律の遵守（git 操作なし・指定ファイル以外の書き込みなし）/ reasoning 既定 high のフッター表示（`fugu high`）。
 

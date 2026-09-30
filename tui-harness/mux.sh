@@ -15,17 +15,32 @@
 #   mux.sh split <対象ペインID> <right|down>
 #       対象ペインを分割し、新ペインの ID だけを1行出力する（フォーカスは移さない）。
 #   mux.sh run <ペインID> <コマンド文字列>       … ペインでコマンドを起動する
+#   mux.sh submit <ペインID> <テキスト>
+#       ハーネスの入力欄へテキストを送って送信する（委譲・question 回答・直送の追送・
+#       通信規約の push はすべてこれを使う）。send → 先頭行の出現確認 → Enter →
+#       入力欄の変化確認（変化しなければ Enter を再送、合計 3 回）の順で行い、
+#       exit 0 = 送信済み / 3 = テキストが画面に現れない（TUI 初期化中の破棄の可能性）/
+#       4 = Enter を再送しても入力欄が変わらない。テキストと Enter を同一バーストで
+#       送ると Enter が効かないことがある（実測 7/12）ため、send + key Enter を
+#       手で組み合わせない。
+#   mux.sh answer <ペインID> <テキスト>
+#       ダイアログ（番号選択等）へテキストを送って Enter で確定する（send → 1 秒 → Enter）。
+#       出現確認が成立しない選択 UI 向け。入力欄への送信には使わない（submit を使う）。
 #   mux.sh send <ペインID> <テキスト>            … テキストを送る（Enter は送らない）
-#   mux.sh key <ペインID> <キー名>               … キーを送る（例: Enter, y）
+#   mux.sh key <ペインID> <キー名>               … キーを送る（例: Enter, y, Down）
 #   mux.sh read <ペインID> [--scrollback] [--lines <N>]
 #       画面を読む。--scrollback は折り返し前の履歴ソース（alt-screen 描画の
 #       ハーネスで必須）。既定は可視画面・20行。
-#   mux.sh wait-output <ペインID> <パターン> <タイムアウトms>
-#       パターンの出現を確定待ちする（現れなければ非0終了）。
+#   mux.sh wait-output <ペインID> <文字列> <タイムアウトms>
+#       文字列（リテラルの部分一致。正規表現ではない）の出現を確定待ちする
+#       （現れなければ非0終了）。
 #   mux.sh agent-wait <ペインID> [--until idle|working|done|blocked] <タイムアウトms>
 #       ペインのエージェント状態の到達を確定待ちし、状態 JSON を出力する。
 #       --until なしは idle / done / blocked のいずれかで発火する（pull 安全網用）。
-#   mux.sh close <ペインID>
+#   mux.sh close <ペインID>                      … ペインを閉じ、消滅を確認してから戻る
+#
+#   send / key / run / submit / answer / close は、対象ペイン ID が list に存在することを
+#   確認してから実行する（存在しなければ非0。古い ID への誤送信の防止）。
 #   mux.sh self                                  … 本スクリプトを実行しているペイン自身の
 #       情報 JSON（pane_id / tab_id / workspace_id）。自ペイン・自ワークスペースの特定は
 #       必ずこれを使う（list の focused はユーザーが閲覧中のワークスペースのアクティブ
@@ -65,9 +80,26 @@ extract_pane_id() {
   sed -n 's/.*"pane_id"[[:space:]]*:[[:space:]]*"\{0,1\}\([^",}]*\)"\{0,1\}.*/\1/p' | head -n1
 }
 
+# 対象ペイン ID の存在確認（ID はペインの増減で振り直されるため、古い ID への送信を止める）。
+require_pane() { # <ペインID> <サブコマンド名>
+  "$0" list 2>/dev/null | grep -E -q "\"pane_id\":[[:space:]]*\"$1\"" \
+    || { echo "$2: ペインが存在しない: $1（mux.sh list で ID を取り直す）" >&2; exit 1; }
+}
+
+# 画面比較用の正規化: スピナー（点字パターン）と数字（経過秒などのカウンタ）を除く。
+normalize_screen() {
+  command -v perl >/dev/null 2>&1 || { echo "perl が無いため画面比較ができない（submit が必要とする）" >&2; exit 1; }
+  perl -CS -pe 's/[\x{2800}-\x{28FF}0-9]//g'
+}
+
+# 送信テキストの出現確認に使う探針: 先頭行の先頭 40 文字（文字単位。バイト切りで UTF-8 を壊さない）。
+probe_of() {
+  printf '%s' "$1" | head -n1 | perl -CS -ne 'print substr($_, 0, 40); exit'
+}
+
 cmd=${1:-}
 [ -n "$cmd" ] || {
-  echo "usage: mux.sh detect|split|run|send|key|read|wait-output|agent-wait|close|self|list|tabs|layout ..." >&2
+  echo "usage: mux.sh detect|split|run|submit|answer|send|key|read|wait-output|agent-wait|close|self|list|tabs|layout ..." >&2
   exit 2
 }
 shift
@@ -83,6 +115,47 @@ fi
 
 BACKEND=$(detect_backend) || exit 1
 
+# エージェント状態（herdr のみ。cmux は状態 API が無いため空文字）。
+agent_status_of() {
+  [ "$BACKEND" = herdr ] || { echo ""; return 0; }
+  herdr agent get "$1" 2>/dev/null | sed -n 's/.*"agent_status":"\([a-z]*\)".*/\1/p'
+}
+
+case "$cmd" in
+  submit)
+    # 実測（2026-09-15、codex TUI）: send 直後の Enter は 7/12 で入力欄に吸収され、
+    # 出現確認を挟むと 0/6、1 秒置くと 0/7 で通った。出現確認は TUI 初期化中の破棄も検出する。
+    [ $# -eq 2 ] || { echo "usage: mux.sh submit <ペインID> <テキスト>" >&2; exit 2; }
+    pane=$1 text=$2
+    require_pane "$pane" submit
+    probe=$(probe_of "$text")
+    "$0" send "$pane" "$text" || exit 1
+    "$0" wait-output "$pane" "$probe" 6000 >/dev/null 2>&1 \
+      || { echo "submit: 送信テキストがペインの画面に現れない（TUI 初期化中の破棄の可能性）: $pane" >&2; exit 3; }
+    before=$("$0" read "$pane" --lines 40 | normalize_screen)
+    status_before=$(agent_status_of "$pane")
+    for _ in 1 2 3; do
+      "$0" key "$pane" Enter || exit 1
+      # 送信されれば、エージェント状態が working になる（herdr）か、画面（エコー・作業表示・
+      # 待ち行列表示）が変わる。3 秒変わらなければ Enter が吸収されたとみなして再送する。
+      for _ in 1 2 3; do
+        sleep 1
+        if [ "$status_before" != working ] && [ "$(agent_status_of "$pane")" = working ]; then exit 0; fi
+        after=$("$0" read "$pane" --lines 40 | normalize_screen)
+        [ "$after" != "$before" ] && exit 0
+      done
+    done
+    echo "submit: Enter を 3 回送っても入力欄が変わらない（送信されていない）: $pane" >&2
+    exit 4
+    ;;
+  answer)
+    [ $# -eq 2 ] || { echo "usage: mux.sh answer <ペインID> <テキスト>" >&2; exit 2; }
+    require_pane "$1" answer
+    "$0" send "$1" "$2" && sleep 1 && "$0" key "$1" Enter
+    exit $?
+    ;;
+esac
+
 case "$BACKEND" in
   herdr)
     case "$cmd" in
@@ -95,14 +168,17 @@ case "$BACKEND" in
         ;;
       run)
         [ $# -eq 2 ] || { echo "usage: mux.sh run <ペインID> <コマンド文字列>" >&2; exit 2; }
+        require_pane "$1" run
         herdr pane run "$1" "$2"
         ;;
       send)
         [ $# -eq 2 ] || { echo "usage: mux.sh send <ペインID> <テキスト>" >&2; exit 2; }
+        require_pane "$1" send
         herdr pane send-text "$1" "$2"
         ;;
       key)
         [ $# -eq 2 ] || { echo "usage: mux.sh key <ペインID> <キー名>" >&2; exit 2; }
+        require_pane "$1" key
         herdr pane send-keys "$1" "$2"
         ;;
       read)
@@ -119,7 +195,7 @@ case "$BACKEND" in
         herdr pane read "$pane" --source "$source" --lines "$lines"
         ;;
       wait-output)
-        [ $# -eq 3 ] || { echo "usage: mux.sh wait-output <ペインID> <パターン> <タイムアウトms>" >&2; exit 2; }
+        [ $# -eq 3 ] || { echo "usage: mux.sh wait-output <ペインID> <文字列> <タイムアウトms>" >&2; exit 2; }
         herdr pane wait-output "$1" --match "$2" --timeout "$3"
         ;;
       agent-wait)
@@ -133,8 +209,16 @@ case "$BACKEND" in
         herdr agent wait "$pane" "${until_arg[@]+"${until_arg[@]}"}" --timeout "$1"
         ;;
       close)
+        # 消滅を確認してから戻る（cmux 分岐と同じ保証。直後の list で残存が見えるレースを防ぐ）。
         [ $# -eq 1 ] || { echo "usage: mux.sh close <ペインID>" >&2; exit 2; }
-        herdr pane close "$1"
+        require_pane "$1" close
+        herdr pane close "$1" || exit 1
+        for _ in 1 2 3 4 5 6; do
+          "$0" list 2>/dev/null | grep -E -q "\"pane_id\":[[:space:]]*\"$1\"" || exit 0
+          sleep 1
+        done
+        echo "close: ペインの消滅を確認できない: $1" >&2
+        exit 1
         ;;
       self)
         # HERDR_PANE_ID（herdr がペインのシェルへ注入）を既定対象として自ペインを返す。
@@ -198,6 +282,7 @@ PY
         # 画面（入力行）に現れたことを確定してから Enter を送る（現れなければ再送、計2回）。
         [ $# -eq 2 ] || { echo "usage: mux.sh run <ペインID> <コマンド文字列>" >&2; exit 2; }
         pane=$1 cmdstr=$2
+        require_pane "$pane" run
         # まずシェルの初期化完了を画面静止（連続2サンプル一致）で確認する。初期化中に
         # 打鍵したテキストは画面にエコーされたまま破棄されるため、出現確認だけでは足りない。
         prev="" settled=""
@@ -209,11 +294,11 @@ PY
           sleep 1
         done
         [ -n "$settled" ] || { echo "run: ペインの画面が静止しない（初期化未完了）: $pane" >&2; exit 1; }
-        probe=$(printf '%s' "$cmdstr" | head -c 40)
+        probe=$(probe_of "$cmdstr")
         ok=""
         for attempt in 1 2; do
           cmux send --surface "$pane" "$cmdstr" >/dev/null || exit 1
-          if "$0" wait-output "$pane" "$(printf '%s' "$probe" | sed 's/[][(){}.*+?^$|\\]/\\&/g')" 6000 >/dev/null 2>&1; then
+          if "$0" wait-output "$pane" "$probe" 6000 >/dev/null 2>&1; then
             ok=1; break
           fi
         done
@@ -223,12 +308,14 @@ PY
         ;;
       send)
         [ $# -eq 2 ] || { echo "usage: mux.sh send <ペインID> <テキスト>" >&2; exit 2; }
+        require_pane "$1" send
         cmux send --surface "$1" "$2" >/dev/null
         ;;
       key)
         # cmux の send-key は特殊キー（enter / esc / ctrl+c 等）用で、平文字の単キーは
         # 効かない（grok の trust ダイアログで実測）。平文字1文字はテキスト送信で代替する。
         [ $# -eq 2 ] || { echo "usage: mux.sh key <ペインID> <キー名>" >&2; exit 2; }
+        require_pane "$1" key
         case "$2" in
           [A-Za-z0-9])
             cmux send --surface "$1" "$2" >/dev/null
@@ -252,13 +339,14 @@ PY
         cmux read-screen --surface "$pane" ${sb[@]+"${sb[@]}"} --lines "$lines"
         ;;
       wait-output)
-        [ $# -eq 3 ] || { echo "usage: mux.sh wait-output <ペインID> <パターン> <タイムアウトms>" >&2; exit 2; }
+        # herdr の --match と同じリテラル部分一致（バックエンド間で意味を揃える）。
+        [ $# -eq 3 ] || { echo "usage: mux.sh wait-output <ペインID> <文字列> <タイムアウトms>" >&2; exit 2; }
         pane=$1 pattern=$2 timeout_ms=$3
         deadline=$(( $(date +%s) + (timeout_ms + 999) / 1000 ))
         while :; do
           screen=$(cmux read-screen --surface "$pane" --lines 80 2>/dev/null) \
             || { echo "wait-output: read-screen 失敗: $pane" >&2; exit 1; }
-          printf '%s' "$screen" | grep -E -q -- "$pattern" && exit 0
+          printf '%s' "$screen" | grep -F -q -- "$pattern" && exit 0
           [ "$(date +%s)" -ge "$deadline" ] && { echo "wait-output: タイムアウト (${timeout_ms}ms)" >&2; exit 1; }
           sleep 1
         done
@@ -315,6 +403,7 @@ print(1 if any(n.get("surface_id") == pane and n["id"] not in base for n in ns) 
         # close-surface の反映は非同期（実測 1〜2 秒）のため、消滅を確認してから戻る
         # （直後の list で残存が見えるレースを防ぐ）。
         [ $# -eq 1 ] || { echo "usage: mux.sh close <ペインID>" >&2; exit 2; }
+        require_pane "$1" close
         cmux close-surface --surface "$1" >/dev/null || exit 1
         for _ in 1 2 3 4 5 6; do
           "$0" list 2>/dev/null | grep -F -q "\"pane_id\": \"$1\"" || exit 0

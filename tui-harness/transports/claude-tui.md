@@ -29,6 +29,8 @@ cd '<プロジェクトルート>' && claude --permission-mode acceptEdits --mod
 
 ## 検証記録
 
+2026-09-15 実測（指揮者 = Claude Code、herdr バックエンド。`mux.sh submit` の導入検証、ADR 0015）: Claude Code 2.1.270 / claude-haiku-4-5-20251001。trust ダイアログ（既定 `No, exit`）を Down → Enter で通過 / `submit` 1 回で送信（送信エコー `❯` と返答 `⏺ OK` を回収）/ `close` の消滅確認。
+
 2026-08-15 実測（指揮者 = codex、Claude Code 2.1.232、herdr バックエンド）: `claude-opus-5` と effort high の明示起動 / TUI 上の `Opus 5 with high effort` 表示 / 未 trust cwd の safety check と Enter による Yes 通過 / 同一 cwd 再起動時のダイアログなし / エージェント検知（`claude`・session）/ send ＋ Enter の委譲 / working 遷移 / `acceptEdits` での回答ファイル作成 / 完了後の idle 復帰 / ペインのクローズ。未検証: ハーネス自身による push、シェル実行の承認ダイアログ形式。
 
 2026-09-15 実測（指揮者 = Claude Code、Claude Code 2.1.270、herdr バックエンド、モデル claude-haiku-4-5-20251001）: trust ダイアログの既定選択が `No, exit` に変わっていることを確認し、Down → Enter で通過。直送委譲の複数行送信（4行 / 19行 1,037 文字）が入力欄に欠けずに入り、Enter 別送で受理、返答を `mux.sh read --scrollback --lines 200` で回収（詳細は `../direct.md` の実測記録）。

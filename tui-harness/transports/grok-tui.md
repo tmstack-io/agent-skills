@@ -18,20 +18,22 @@ grok --cwd '<プロジェクトルート>'
 
 ## エージェント検知と受理判定
 
-- エージェント名 `grok`。**`agent_session` は null のことがある**（実測）— 受理完了の判定に `agent_session` は使わず、working 遷移＋（未遷移時は）../SKILL.md の「タスクの委譲」手順3の三分で判定する。
+- エージェント名 `grok`。**`agent_session` は null のことがある**（実測）— 受理完了の判定に `agent_session` は使わず、working 遷移＋（未遷移時は）../SKILL.md の「タスクの委譲」手順3の二分で判定する。
 - 起動直後の `agent_not_found` レース（../SKILL.md「ペインの起動」の起動シーケンスに含まれる再実行で対処）は grok で実測した事象である。
 
 ## 権限モデル
 
-権限は**選択的承認モデル**である（0.2.114 実測）。読み取り系のシェル実行・ファイルの読み書き・通信規約の push は無確認で実行されるが、**書き込み効果のあるシェルコマンド（`mkdir` 等）は承認ダイアログ（`1 always-approve ／ 2 Yes, proceed ／ 3 No, reject`）を出し、エージェント状態が `blocked` になる**（ペインタイトルに「⚠ Action Required」）。裁定は ../SKILL.md の「指揮者裁定」に従う: `mux.sh read`（--scrollback）で内容を確認し、妥当なら `mux.sh send <ペインID> "2"` ＋ `mux.sh key <ペインID> Enter`（今回のみ許可）で通過し、安全網を張り直す。`1`（always-approve）は書き込みスコープを別途制限できる場合に限る。承認が出ない書き込みも多い（防御の正本は ../SKILL.md「呼び出しパラメータ」の裁定スコープ項）。
+権限は**選択的承認モデル**である（0.2.114 実測）。読み取り系のシェル実行・ファイルの読み書き・通信規約の push は無確認で実行されるが、**書き込み効果のあるシェルコマンド（`mkdir` 等）は承認ダイアログ（`1 always-approve ／ 2 Yes, proceed ／ 3 No, reject`）を出し、エージェント状態が `blocked` になる**（ペインタイトルに「⚠ Action Required」）。裁定は ../SKILL.md の「指揮者裁定」に従う: `mux.sh read`（--scrollback）で内容を確認し、妥当なら `mux.sh answer <ペインID> "2"`（今回のみ許可）で通過し、安全網を張り直す。`1`（always-approve）は書き込みスコープを別途制限できる場合に限る。承認が出ない書き込みも多い（防御の正本は ../SKILL.md「呼び出しパラメータ」の裁定スコープ項）。
 
 ## 固有の注意
 
-- **`mux.sh read` は `--scrollback` を必ず付ける**: grok は terminal alternate screen で描画するため、可視画面ソースでは応答本文が見えないことがある（実測）。受理判定の三分・応答の直接回収・ダイアログ確認はすべて `--scrollback` で行う。
+- **`mux.sh read` は `--scrollback` を必ず付ける**: grok は terminal alternate screen で描画するため、可視画面ソースでは応答本文が見えないことがある（実測）。受理判定の二分・応答の直接回収・ダイアログ確認はすべて `--scrollback` で行う。
 - ツール活動（`◈ Read` / `◆ Creating ...`）と思考の経過（`◆ Thought for ...`）がペインに表示され、観戦できる。
 - ハーネス自身による push は無確認で実行され、確実に届く（実測: 利用スキルからの委譲2件で計6/6到達。選択的承認モデルでも push はブロックされなかった）。pull 安全網は共通原則どおり併設する。
 
 ## 検証記録
+
+2026-09-15 実測（指揮者 = Claude Code、herdr バックエンド。`mux.sh submit` の導入検証、ADR 0015）: trust 済み cwd のダイアログなし起動 / `submit` 1 回で送信（送信エコー `❯` と返答 OK を `--scrollback` で回収）/ `close` の消滅確認。
 
 2026-07-30 実測（検証＋利用スキルからの委譲1件・同一ペインへの追送を含む計3回の実運用）: trust ダイアログなしの起動（trust 済み cwd）/ エージェント検知（`grok`・status。`agent_session` は null）/ 読み取りの無確認実行 / ワークスペース内書き込みの無確認実行 / push の無確認実行と到達（3/3。書き込み規律・ブリーフ遵守も3回とも違反なし）/ 委譲の受理と同一ペインへの次の委譲での文脈保持 / モデル名のフッター表示（`Grok 4.5 (high)`）/ alt-screen 描画により可視ソースで応答が見えない事象と scrollback での回収。
 

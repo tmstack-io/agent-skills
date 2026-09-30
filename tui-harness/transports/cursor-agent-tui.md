@@ -26,4 +26,6 @@ cursor-agent --trust --auto-review --workspace '<プロジェクトルート>'
 
 ## 検証記録
 
+2026-09-15 実測（指揮者 = Claude Code、herdr バックエンド。`mux.sh submit` の導入検証、ADR 0015）: `--trust` 起動 / `submit` 1 回で送信（送信エコーと返答 OK を回収）/ `close` の消滅確認。
+
 2026-07-30 実測: `--trust` によるダイアログ抑止 / エージェント検知（`cursor`・status・session）/ send ＋ Enter の委譲と Enter 吸収の再現（../SKILL.md の「タスクの委譲」手順3の三分で回復）/ 既定モード＋`--auto-review` でのファイル書き込み自動承認とツール活動のペイン表示。未検証: ハーネス自身による push の実行可否（安全網回収でカバー）。
