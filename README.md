@@ -40,13 +40,12 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 
 | スキル | 概要 |
 |---|---|
-| concertino | 指定ロール（implement / review / explore）を複数ハーネス奏者の編成（合計4まで）に配役するセッションモード（TUI マルチプレクサ環境専用。固定既定なし・奏者は指揮者と異系統のモデルが必須） |
 | code-sweep | 書きたてのコードから不要なコメント・docstring（自明コメント・変更ナラティブ・開発時の事情等）を検出・削除。引数なしでセッション生成物の後処理（文書の整形は publish-polish） |
 | deep-pr-review | GitHub PR の高精度レビュー（多エージェント＋ハーネス、モデルの順で選ぶ異系統モデルの外部独立レビュー＋architect メタ検証を統合レビュー1本に集約。固定既定なし・TUI マルチプレクサ環境専用・投稿は pr-comment） |
 | figma-to-code | Figma デザインをコードベースへ 1:1 実装（PC/SP の対応表と一括キャッシュを先に作り、セクション単位で実装と実機スクリーンショット照合を反復） |
 | impact-investigation | CVE・指摘・バグ報告起点の影響範囲調査レポート生成（調査と修正を分離。`--for <読者>` で指定読者向けの平易なレポートに） |
-| iterate-review | レビュー→修正→再レビューを GREEN までループする品質ゲート（レビュアーは配役 → ハーネス、モデルの順で選ぶ固定既定なしのペイン → サブエージェント縮退の順で解決） |
-| maestro | 実行エージェント本体を非実装の指揮者に固定し、実装・調査を奏者（サブエージェント、無い環境では指揮者と同系統ハーネスのペイン）へ委譲するセッションモード（`--deep` / `--fast` で検収深度を上書き） |
+| iterate-review | レビュー→修正→再レビューを GREEN までループする品質ゲート（レビュアーはハーネス、モデルの順で選ぶ固定既定なしのペイン → サブエージェント縮退の順で解決） |
+| maestro | 実行エージェント本体を非実装の指揮者に固定し、実装・調査を奏者（サブエージェント、無い環境では指揮者と同系統ハーネスのペイン。ロールの値を `<CLI名>=<モデル>[@<エフォート>]` とすれば指定ハーネスのペイン）へ委譲するセッションモード（`--deep` / `--fast` で検収深度を上書き） |
 | plainify | AI 生成の難解な文章を平易化する事後リライト（言語非依存の普遍規則＋言語別規則。言語別規則は現在日本語を収録。既定は意味厳守、`--for <読者>` で指定読者への読者適応、`--auto` で整形前確認を自動確定。GitHub PR / issue も入力可） |
 | pr-comment | 同一セッションの deep-pr-review 統合レビューから、ユーザーが選んだ指摘だけを GitHub PR のレビューコメントとして投稿（publish-polish → plainify の2段で公開整形・行アンカー／会話コメント） |
 | pr-recheck | 投稿済みの指摘コメントが PR の新しい head で解消されているかを検証（修正検証）し、選別を経て判定つきの返信を投稿（解消は resolve 併実施。セッションを跨いで動作） |
@@ -59,10 +58,9 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 | skill-refine | 既存スキルの査読→承認→洗練を行うメタスキル（点検は独立3体の多重点検で過半数指摘のみ正規受理。craft 基準は writing-for-agents（`mattpocock/skills`）を正本として適用。既定は汎用スキル基準。`--myself` で実行ハーネス専用基準、`--project` でプロジェクト専用基準に切り替え。`--auto [推奨|must|全件]` で承認範囲を指定値で自動確定して無人で周回（`--max N` で上限、既定5）） |
 | slack-research | プロジェクトに紐づく Slack ワークスペースの読み取り専用調査（`.slack-research-env` の User Token で curl から Web API を直接呼ぶ。MCP 不要・複数ワークスペースはプロジェクト毎のトークンで切り替え） |
 | smart-commit | 未コミット変更を論理単位の atomic コミットへ自動分割・登録（規約検出・単位ごと軽量検証つき） |
-| solista | 編成1の concertino — 単独奏者へ指定ロールを配役するセッションモード（固定既定なし・指揮者と異系統のモデルが必須） |
 | tandem | 実行エージェントが著者として課題を進めながら、ハーネス1ペインを相談役に立て、指摘・意見の往復を収束（LGTM）まで中継する二人三脚協働（TUI マルチプレクサ環境専用。新設は異系統必須・`--pane` で稼働中の既存ペインを採用可・`--direct` で初回ブリーフ以後の追問をペインへ直接送る直送モード） |
 | tui-harness | TUI マルチプレクサのペインで他 LLM ハーネス（codex / cursor-agent / agy / claude / grok / hermes）を起動・委譲・回収する基盤（`mux.sh` / `catalog.sh` / モデル系統の照合 / ハーネス別 transports。現行バックエンド herdr / cmux） |
 
 ## スキル間の依存
 
-smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。roundtable / concertino / deep-pr-review / sidebar / tandem は tui-harness に依存し（必須）、maestro はペイン経路（サブエージェント機構が無い実行ハーネス）でのみ tui-harness に依存する。deep-pr-review は plainify にも依存する（必須）。iterate-review はレビュアー解決のハーネスペイン経路（既定）で tui-harness に依存する（TUI 環境が無い場合はサブエージェントへ縮退）。skill-refine はサブエージェント機構が無い環境の点検ペイン経路でのみ tui-harness に依存する（TUI 環境も無ければ自己実行へ縮退）。solista は concertino に、pr-comment / pr-recheck / pr-respond は publish-polish と plainify に依存し（pr-recheck / pr-respond は pr-comment 同梱の公開整形契約も参照する）、roundtable の実装プロンプト書き出し（求められた場合のみ）は session-to-prompt に依存する。各スキルは実行前に依存先を「自スキルの隣 → 実行ハーネス自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
+smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。roundtable / deep-pr-review / sidebar / tandem は tui-harness に依存し（必須）、maestro はペイン経路（サブエージェント機構が無い実行ハーネス、またはハーネス指定のロール）でのみ tui-harness に依存する。deep-pr-review は plainify にも依存する（必須）。iterate-review はレビュアー解決のハーネスペイン経路（既定）で tui-harness に依存する（TUI 環境が無い場合はサブエージェントへ縮退）。skill-refine はサブエージェント機構が無い環境の点検ペイン経路でのみ tui-harness に依存する（TUI 環境も無ければ自己実行へ縮退）。pr-comment / pr-recheck / pr-respond は publish-polish と plainify に依存し（pr-recheck / pr-respond は pr-comment 同梱の公開整形契約も参照する）、roundtable の実装プロンプト書き出し（求められた場合のみ）は session-to-prompt に依存する。各スキルは実行前に依存先を「自スキルの隣 → 実行ハーネス自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
