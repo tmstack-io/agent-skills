@@ -17,7 +17,8 @@
 #   mux.sh run <ペインID> <コマンド文字列>       … ペインでコマンドを起動する
 #   mux.sh submit <ペインID> <テキスト>
 #       ハーネスの入力欄へテキストを送って送信する（委譲・question 回答・直送の追送・
-#       通信規約の push はすべてこれを使う）。send → 先頭行の出現確認 → Enter →
+#       通信規約の push はすべてこれを使う）。send → 先頭行の出現確認（入力欄での
+#       折り返しを許して照合する）→ Enter →
 #       入力欄の変化確認（変化しなければ Enter を再送、合計 3 回）の順で行い、
 #       exit 0 = 送信済み / 3 = テキストが画面に現れない（TUI 初期化中の破棄の可能性）/
 #       4 = Enter を再送しても入力欄が変わらない。テキストと Enter を同一バーストで
@@ -97,6 +98,23 @@ probe_of() {
   printf '%s' "$1" | head -n1 | perl -CS -ne 'print substr($_, 0, 40); exit'
 }
 
+# 送信テキストの出現確認: 可視画面に探針が現れるまで待つ（現れなければ非0）。
+# TUI の入力欄は長い入力を折り返して表示し、継続行にインデントを付ける（折り返し位置は
+# 空白とは限らず、パスの途中でも切れる）。そのため探針の文字間には画面上の空白・改行の
+# 挿入を許し、探針内の空白は1文字以上の空白に対応させて照合する（本文の空白が消えた画面は
+# 一致させない）。探針は1文字ずつ quotemeta し、正規表現として解釈しない。
+wait_echo() { # <ペインID> <探針> <タイムアウトms>
+  local deadline=$(( $(date +%s) + ($3 + 999) / 1000 ))
+  while :; do
+    "$0" read "$1" --lines 40 2>/dev/null | perl -CSA -0777 -ne '
+      BEGIN { $p = shift @ARGV; $p =~ s/\s+/ /g;
+              $re = join "\\s*", map { $_ eq " " ? "\\s+" : quotemeta } split //, $p }
+      exit(/$re/ ? 0 : 1)' -- "$2" && return 0
+    [ "$(date +%s)" -ge "$deadline" ] && return 1
+    sleep 1
+  done
+}
+
 cmd=${1:-}
 [ -n "$cmd" ] || {
   echo "usage: mux.sh detect|split|run|submit|answer|send|key|read|wait-output|agent-wait|close|self|list|tabs|layout ..." >&2
@@ -130,7 +148,7 @@ case "$cmd" in
     require_pane "$pane" submit
     probe=$(probe_of "$text")
     "$0" send "$pane" "$text" || exit 1
-    "$0" wait-output "$pane" "$probe" 6000 >/dev/null 2>&1 \
+    wait_echo "$pane" "$probe" 6000 \
       || { echo "submit: 送信テキストがペインの画面に現れない（TUI 初期化中の破棄の可能性）: $pane" >&2; exit 3; }
     before=$("$0" read "$pane" --lines 40 | normalize_screen)
     status_before=$(agent_status_of "$pane")
@@ -298,7 +316,7 @@ PY
         ok=""
         for attempt in 1 2; do
           cmux send --surface "$pane" "$cmdstr" >/dev/null || exit 1
-          if "$0" wait-output "$pane" "$probe" 6000 >/dev/null 2>&1; then
+          if wait_echo "$pane" "$probe" 6000; then
             ok=1; break
           fi
         done

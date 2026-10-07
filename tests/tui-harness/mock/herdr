@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# mux.sh 回帰検証用の herdr モック（ペイン p1 のみ）。画面は $MOCK_DIR/screen、送信キーは $MOCK_DIR/keys に記録する。
+D=$MOCK_DIR
+case "$1 $2" in
+  "pane list") echo '{"result":{"panes":[{"pane_id":"p1"}]}}' ;;
+  "pane send-text") [ "${MOCK_MODE:-}" = drop ] || python3 "$(dirname "$0")/render.py" "$D/screen" "$4" ;;
+  "pane read") cat "$D/screen" ;;
+  "pane wait-output") # 実 herdr と同じリテラル部分一致: wait-output <ペイン> --match <文字列> --timeout <ms>
+    end=$(( $(date +%s) + ($7 + 999) / 1000 ))
+    while :; do
+      grep -F -q -- "$5" "$D/screen" && exit 0
+      [ "$(date +%s)" -ge "$end" ] && exit 1
+      sleep 1
+    done ;;
+  "pane send-keys") echo "$4" >> "$D/keys"; echo "● working" >> "$D/screen" ;;
+  "agent get") echo '{"agent_status":"idle"}' ;;
+  *) echo "herdr モック: 未対応 $*" >&2; exit 9 ;;
+esac
