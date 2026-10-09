@@ -1,0 +1,5 @@
+interface:
+  display_name: "Matt Flow"
+  short_description: "mattpocock/skills の開発フローを grilling から規模別に振り分けて実行"
+policy:
+  allow_implicit_invocation: false
