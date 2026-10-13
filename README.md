@@ -57,7 +57,7 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 | skill-refine | 既存スキルの査読→承認→洗練を行うメタスキル（点検は独立3体の多重点検で過半数指摘のみ正規受理。craft 基準は writing-for-agents（`mattpocock/skills`）を正本として適用。既定は汎用スキル基準。`--myself` で実行ハーネス専用基準、`--project` でプロジェクト専用基準に切り替え。`--auto [推奨|must|全件]` で承認範囲を指定値で自動確定して無人で周回（`--max N` で上限、既定5）） |
 | slack-research | プロジェクトに紐づく Slack ワークスペースの読み取り専用調査（`.slack-research-env` の User Token で curl から Web API を直接呼ぶ。MCP 不要・複数ワークスペースはプロジェクト毎のトークンで切り替え） |
 | smart-commit | 未コミット変更を論理単位の atomic コミットへ自動分割・登録（規約検出・単位ごと軽量検証つき） |
-| tandem | 実行エージェントが著者として課題を進めながら、ハーネス1ペインを相談役に立て、指摘・意見の往復を収束（LGTM）まで中継する二人三脚協働（TUI マルチプレクサ環境専用。新設は異系統必須・`--pane` で稼働中の既存ペインを採用可・`--direct` で初回ブリーフ以後の追問をペインへ直接送る直送モード） |
+| tandem | 実行エージェントが著者として課題を進めながら、ハーネス1ペインを相談役に立て、指摘・意見の往復を収束（LGTM）まで中継する二人三脚協働（TUI マルチプレクサ環境専用。相談では異系統を推奨・`--pane` で稼働中の既存ペインを採用可・`--direct` で初回ブリーフ以後の追問をペインへ直接送る直送モード・`--invoke` で依頼文に名指しした明示起動スキルをペインで代理実行する代理実行型） |
 | tui-harness | TUI マルチプレクサのペインで他 LLM ハーネス（codex / cursor-agent / agy / claude / grok / hermes）を起動・委譲・回収する基盤（`mux.sh` / `catalog.sh` / モデル系統の照合 / ハーネス別 transports。現行バックエンド herdr / cmux） |
 
 ## スキル間の依存
