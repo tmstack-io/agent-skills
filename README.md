@@ -44,7 +44,6 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 | deep-pr-review | GitHub PR の高精度レビュー（多エージェント＋ハーネス、モデルの順で選ぶ異系統モデルの外部独立レビュー＋architect メタ検証を統合レビュー1本に集約。固定既定なし・TUI マルチプレクサ環境専用・投稿は pr-comment） |
 | figma-to-code | Figma デザインをコードベースへ 1:1 実装（PC/SP の対応表と一括キャッシュを先に作り、セクション単位で実装と実機スクリーンショット照合を反復） |
 | impact-investigation | CVE・指摘・バグ報告起点の影響範囲調査レポート生成（調査と修正を分離。`--for <読者>` で指定読者向けの平易なレポートに） |
-| iterate-review | レビュー→修正→再レビューを GREEN までループする品質ゲート（レビュアーはハーネス、モデルの順で選ぶ固定既定なしのペイン → サブエージェント縮退の順で解決） |
 | maestro | 実行エージェント本体を非実装の指揮者に固定し、実装・調査を奏者（サブエージェント、無い環境では指揮者と同系統ハーネスのペイン。ロールの値を `<CLI名>=<モデル>[@<エフォート>]` とすれば指定ハーネスのペイン）へ委譲するセッションモード（`--deep` / `--fast` で検収深度を上書き） |
 | matt-flow | mattpocock/skills の開発フロー（grill-with-docs → to-spec → to-tickets → implement）を grilling 後の規模判定で振り分けて実行するルーター（保留あり→案内して停止、複数チケット規模→spec とチケット作成まで、1セッション規模→seam と検証方法の合意・軽量 spec・実装・2軸レビューまで。`--ticket` でチケット1枚を実装。setup 有無を問わず稼働・コミットはしない） |
 | plainify | AI 生成の難解な文章を平易化する事後リライト（言語非依存の普遍規則＋言語別規則。言語別規則は現在日本語を収録。既定は意味厳守、`--for <読者>` で指定読者への読者適応、`--auto` で整形前確認を自動確定。GitHub PR / issue も入力可） |
@@ -52,7 +51,6 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 | pr-recheck | 投稿済みの指摘コメントが PR の新しい head で解消されているかを検証（修正検証）し、選別を経て判定つきの返信を投稿（解消は resolve 併実施。セッションを跨いで動作） |
 | pr-respond | 自分が著者の PR に付いたレビュー指摘（人間・bot）を対処判定（妥当 / 不当 / 要判断）し、二段の承認を経て妥当分をレビュー指摘ごとに修正・コミット・push、妥当分には修正コミット、不当分には理由の返信を投稿する著者側スキル（要判断は報告のみ。resolve はしない。セッションを跨いで動作） |
 | publish-polish | 公開予定のドキュメント・コードコメントを初見の読者に成立する公開品質へ書き換え（漏えい疑いは警告のみ。`--style` で文体・体裁・構成の磨き込みも提案、`--auto` で承認を自動化） |
-| roundtable | 与えられた合議の主題を異系統の3 LLM（議長系統の host 固定席＋未指定時にハーネス、各モデルの2段階で選ぶ2席）で合議し、最終回答に統合する円卓会議（TUI マルチプレクサ環境専用。議事録を `.roundtable/` に永続保存） |
 | session-to-prompt | セッションの決定事項から宛先別の自己完結実装プロンプトを生成 |
 | sidebar | 実行中と別系統のモデルへセッションの文脈を添えて問いを投げ、以後の壁打ちをそのペインでユーザーに引き渡す別席相談（TUI マルチプレクサ環境専用。片道委譲・1席・工程非依存。前回のペインが生きていれば差分だけを添えて追問できる） |
 | skill-feedback | 同一セッションで実際に使ったスキルの実行の証跡（逸脱・補完・介入・空振り）から問題点を洗い出し、汎化テストを通った修正だけを承認後に SKILL.md へ適用（skill-refine の静的査読と別系統のセッション駆動改善。汎化の地平は対象の適用範囲で切替 — `--myself` でハーネス軸、`--project` でプロジェクト軸を免除） |
@@ -64,4 +62,8 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 
 ## スキル間の依存
 
-smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。roundtable / deep-pr-review / sidebar / tandem は tui-harness に依存し（必須）、maestro はペイン経路（サブエージェント機構が無い実行ハーネス、またはハーネス指定のロール）でのみ tui-harness に依存する。deep-pr-review は plainify にも依存する（必須）。iterate-review はレビュアー解決のハーネスペイン経路（既定）で tui-harness に依存する（TUI 環境が無い場合はサブエージェントへ縮退）。skill-refine はサブエージェント機構が無い環境の点検ペイン経路でのみ tui-harness に依存する（TUI 環境も無ければ自己実行へ縮退）。pr-comment / pr-recheck / pr-respond は publish-polish と plainify に依存し（pr-recheck / pr-respond は pr-comment 同梱の公開整形契約も参照する）、roundtable の実装プロンプト書き出し（求められた場合のみ）は session-to-prompt に依存する。matt-flow はリポジトリ外の `mattpocock/skills`（grill-with-docs / grilling / domain-modeling / codebase-design / to-spec / to-tickets / implement / tdd / code-review）に依存する（必須。導入は `npx skills add mattpocock/skills`）。各スキルは実行前に依存先を「自スキルの隣 → 実行ハーネス自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
+smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。deep-pr-review / sidebar / tandem は tui-harness に依存し（必須）、maestro はペイン経路（サブエージェント機構が無い実行ハーネス、またはハーネス指定のロール）でのみ tui-harness に依存する。deep-pr-review は plainify にも依存する（必須）。skill-refine はサブエージェント機構が無い環境の点検ペイン経路でのみ tui-harness に依存する（TUI 環境も無ければ自己実行へ縮退）。pr-comment / pr-recheck / pr-respond は publish-polish と plainify に依存し（pr-recheck / pr-respond は pr-comment 同梱の公開整形契約も参照する）。matt-flow はリポジトリ外の `mattpocock/skills`（grill-with-docs / grilling / domain-modeling / codebase-design / to-spec / to-tickets / implement / tdd / code-review）に依存する（必須。導入は `npx skills add mattpocock/skills`）。各スキルは実行前に依存先を「自スキルの隣 → 実行ハーネス自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
+
+## アーカイブ
+
+`archive/` 配下は利用を停止したスキルの保管場所。シンボリックリンクを張らず、`npx skills` での配布対象にもしない。
