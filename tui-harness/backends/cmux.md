@@ -35,3 +35,12 @@
 cmux での実測範囲: mux.sh 全サブコマンド（`self` と、`layout` の自ワークスペース固定を除く）、codex / grok の委譲一巡（起動・trust 通過・受理・完了検知・回収・クローズ）、委譲先（codex）自身による通信規約の push 送達。
 
 未実測: `submit` / `answer` と `wait-output` のリテラル一致化（2026-09-15 の変更。herdr でのみ実測）、`self`（env 組み立ての cmux セッション内動作）、`layout` の自ワークスペース固定（`--workspace` 指定での挙動）、blocked（承認ダイアログ）場面の安全網検知と裁定、既存ペインの起用（`existing-pane.md`）の cmux 代替判定（`commands` 照合・短時間 idle 判定）、claude / cursor-agent / agy / hermes の各初期ダイアログ（transports の実測記録は herdr 指揮者のもの）。
+
+2026-10-14 実測（指揮者 = Claude Code。herdr ペインから `HERDR_ENV=0 CMUX_SOCKET_PATH=<cmux の socket>` で cmux 0.65.1 を操作。直送委譲の可否の確認）:
+
+- `split`: `new-split` は新ペインの ref を出力するが、`surface.list` に現れるのは 0.5〜1 秒後。mux.sh は出力の ref が一覧に現れるまで待つ。
+- `close`: `close-surface` は `--workspace` が無いと `$CMUX_WORKSPACE_ID` に頼る（cmux 端末外では失敗する）。また、プロセスが動いているペインには `--force` が要る。mux.sh は list から引いたワークスペースと `--force` を渡す。
+- `read --scrollback`: `read-screen` は要求した行数をそのまま返す（6000 行の出力を全行読めた）。行数規則の上限 1000 行は herdr に合わせたもの。
+- **`send` は改行を Enter として打鍵する**（`\n` 等のエスケープも解釈する）ため、複数行の本文は1行ずつ送信される。`--paste` を付けると1回の貼り付けになるが、claude と grok は入力欄で `[Pasted …]` に畳んで表示するため、`submit` の出現確認（本文末尾の照合）が成立しない。
+- codex・agy のペインは、`send`（`--force` 付き・フォーカス後を含む）と `--paste` のどちらの入力も画面に現れず、codex のセッション記録にも入力が残らなかった（原因未特定）。
+- 以上により、cmux では複数行の直送委譲が成立しない（tandem の直送モード・代理実行型が cmux で中止する規定はこのまま維持する）。

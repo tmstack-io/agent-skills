@@ -277,7 +277,7 @@ case "$BACKEND" in
       split)
         [ $# -eq 2 ] || { echo "usage: mux.sh split <対象ペインID> <right|down>" >&2; exit 2; }
         python3 - "$1" "$2" <<'PY'
-import json, os, subprocess, sys
+import json, os, re, subprocess, sys, time
 target, direction = sys.argv[1], sys.argv[2]
 env = {**os.environ, "CMUX_QUIET": "1"}
 def surfaces(ws_id):
@@ -298,9 +298,19 @@ r = subprocess.run(["cmux", "new-split", direction, "--surface", target, "--focu
                    capture_output=True, text=True, env=env)
 if r.returncode != 0:
     print(r.stderr or r.stdout, file=sys.stderr); sys.exit(1)
-new = [s["id"] for s in surfaces(wsid) if s["id"] not in before]
-if len(new) != 1:
-    print(f"split: 新ペインを特定できない: {new}", file=sys.stderr); sys.exit(1)
+# new-split は新ペインの ref（surface:N）を出力するが、surface.list に現れるのは 0.5〜1 秒後
+# （実測）。出力の ref が一覧に現れるまで待ち、その UUID を返す。
+m = re.search(r"surface:\d+", r.stdout)
+if not m:
+    print(f"split: new-split の出力から新ペインの ref を読めない: {r.stdout.strip()}", file=sys.stderr); sys.exit(1)
+deadline = time.time() + 10
+while True:
+    new = [s["id"] for s in surfaces(wsid) if s.get("ref") == m.group(0) and s["id"] not in before]
+    if new:
+        break
+    if time.time() >= deadline:
+        print(f"split: 新ペイン {m.group(0)} が 10 秒以内に一覧に現れない", file=sys.stderr); sys.exit(1)
+    time.sleep(0.5)
 print(new[0])
 PY
         ;;
@@ -432,7 +442,13 @@ print(1 if any(n.get("surface_id") == pane and n["id"] not in base for n in ns) 
         # （直後の list で残存が見えるレースを防ぐ）。
         [ $# -eq 1 ] || { echo "usage: mux.sh close <ペインID>" >&2; exit 2; }
         require_pane "$1" close
-        cmux close-surface --surface "$1" >/dev/null || exit 1
+        # close-surface は --workspace が無いと $CMUX_WORKSPACE_ID の既定に頼り、未設定（cmux 端末外）
+        # や別ワークスペースのペインでは失敗するため、ペインの属するワークスペースを list から引いて渡す。
+        # cmux 0.65 以降はプロセスが動いているペインの close に --force を要する（実測）。クローズは
+        # ハーネスが動いたままのペインを閉じる手順なので常に付ける（herdr の close と同じ挙動）。
+        ws=$("$0" list | python3 -c 'import json,sys; print(next(p["workspace_id"] for p in json.load(sys.stdin)["result"]["panes"] if p["pane_id"] == sys.argv[1]))' "$1") \
+          || { echo "close: ペインの属するワークスペースを特定できない: $1" >&2; exit 1; }
+        cmux close-surface --force --workspace "$ws" --surface "$1" >/dev/null || exit 1
         for _ in 1 2 3 4 5 6; do
           "$0" list 2>/dev/null | grep -F -q "\"pane_id\": \"$1\"" || exit 0
           sleep 1
