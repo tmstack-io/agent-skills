@@ -7,12 +7,13 @@ Claude Code の `claude` CLI をペインで起用するときのハーネス固
 `mux.sh run` に渡す起動コマンド:
 
 ```sh
-cd '<プロジェクトルート>' && claude --permission-mode acceptEdits --model '<モデルID>'
+cd '<プロジェクトルート>' && claude --permission-mode auto --model '<モデルID>'
 ```
 
 - **モデル ID は必須**: `catalog.sh models claude` が返す `models/claude.txt` 掲載 ID を指定する。Claude CLI からモデル一覧を正確に取得できないため、`opus` / `sonnet` / `fable` 等の可変別名と未掲載 ID は使わない。末尾に `[1m]` が付いた指定（1M トークンコンテキスト版）は、`[1m]` を除いた部分が掲載 ID なら元の値のまま `--model` に渡す。
 - 呼び出し側が reasoning effort を指定した場合は `--effort <level>` を付加する（effort は実行設定であり、モデル系統の照合には含めない）。
-- **`acceptEdits`**: 成果物ファイルの作成・編集を受理し、シェル実行等の追加承認は共通手順の指揮者裁定へ送る。全面的な権限バイパスは使わない。`acceptEdits` はプロジェクト全域のファイル編集を自動受理する（成果物置き場外への書き込みを遮断しない。防御の正本は ../SKILL.md「呼び出しパラメータ」の裁定スコープ項）。
+- **`auto`（auto mode）**: ファイル編集とシェル実行の許否を Claude Code の分類器が判定し、安全と判定した操作は承認ダイアログを出さずに実行する（`acceptEdits` ではシェル実行のたびにダイアログが出て、指揮者裁定が委譲の大半を占めたため）。全面的な権限バイパスは使わない。分類器はプロジェクト全域の編集と、分類器が安全と判定したシェル実行を無確認で通す（成果物置き場外への書き込みを遮断しない。防御の正本は ../SKILL.md「呼び出しパラメータ」の裁定スコープ項）。それでも出るダイアログは共通手順の指揮者裁定へ送る。
+- **auto mode の起動確認**: auto mode に対応しないモデル（`claude-haiku-4-5-20251001` で実測）を指定すると、claude はエラーを出さずに `manual mode`（全操作を確認するモード）で起動する。起動シーケンスの末尾に `<mux.sh> read "$PANE" | grep -F 'auto mode on' || echo 'auto-mode=off'` を加えて束ね、`auto-mode=off` が出たら、そのペインを ../SKILL.md「クローズ」の手順で閉じ、「auto mode に対応するモデルを指定し直す（推奨）」「`--permission-mode acceptEdits` で起動し直す（シェル実行のたびに裁定が要る）」「委譲を中止する」を散文提示で確認する。
 
 ## trust ダイアログ
 
@@ -28,6 +29,8 @@ cd '<プロジェクトルート>' && claude --permission-mode acceptEdits --mod
 `../direct.md`「返答の受け取り」で使う画面マーカー: 指揮者の送信エコーは `❯ ` で始まる行（本文が折り返されると続きの行は行頭が空白）、返答は `⏺ ` で始まる行から次の区切り線（`────`）の手前まで。返答の直後に `✻ ... · done` 行が付く。画面末尾の入力欄（空の `❯`）・ステータス行は返答に含めない。
 
 ## 検証記録
+
+2026-10-14 実測（指揮者 = Claude Code、Claude Code 2.1.299、herdr バックエンド）: `claude-sonnet-5` を `--permission-mode auto` で起動し、ステータス行に `⏵⏵ auto mode on` が出ること、`git log` と `gh pr list` の実行がダイアログなしで通ることを確認した。`claude-haiku-4-5-20251001` では同じ起動コマンドでエラーなく `⏸ manual mode on` になった。未検証: auto mode の初回利用時に出うる案内ダイアログ（本機は利用済みのため出なかった）、分類器が操作を拒否したときの画面。
 
 2026-09-15 実測（指揮者 = Claude Code、herdr バックエンド。`mux.sh submit` の導入検証、ADR 0015）: Claude Code 2.1.270 / claude-haiku-4-5-20251001。trust ダイアログ（既定 `No, exit`）を Down → Enter で通過 / `submit` 1 回で送信（送信エコー `❯` と返答 `⏺ OK` を回収）/ `close` の消滅確認。
 
