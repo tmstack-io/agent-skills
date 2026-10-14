@@ -20,6 +20,10 @@ trap 'exit 143' TERM
 LONG='[job-1] done /home/example/projects/sample-app/.work/job-1/report-job-1-t7-2.md'
 SYM='sym .*+?[](){}|^$\ 終わり /tmp/a b'
 JA='完了しました。報告は /tmp/報告書 にあります'
+# 読み取り範囲（40 行）より長い複数行の本文。先頭行は画面の読み取り範囲の外へ出る。
+MULTI=$(for i in $(seq -w 1 60); do printf '行%s 本文の一行 %s\n' "$i" "$i"; done; printf '以上（末尾 END-60）')
+# 取り込みが途中で止まる状況用の短めの複数行（タイムアウトが本文長に比例するため短くする）。
+SHORT_MULTI=$(for i in 1 2 3 4 5 6 7 8 9; do printf 'line%s body\n' "$i"; done; printf 'tail END-9')
 LAUNCH="cd '/home/example/projects/sample-app' && some-harness --model example-model"
 
 # check <バックエンド> <サブコマンド> <名前> <期待終了コード> <期待 Enter（有/無）> <MOCK_MODE> <MOCK_WIDTH> <テキスト> [事前画面]
@@ -62,7 +66,10 @@ for b in herdr cmux; do
   check $b submit "先頭がハイフンの入力が届く"   0 有 word   60 "-foo bar"
   check $b submit "入力が届かない"               3 無 drop   60 "$LONG"
   check $b submit "短い接頭辞だけが画面にある"   3 無 drop   60 "$LONG" $'❯ [job-1] done\n'
-  check $b submit "本文の空白が画面で消えている" 3 無 squash 60 "$LONG"
+  check $b submit "本文の空白が画面で消えている" 3 無 squash 60 "$JA"
+  check $b submit "先頭行が読み取り範囲外の複数行" 0 有 hard   60 "$MULTI"
+  check $b submit "枠線付き入力欄での折り返し"   0 有 box    20 "$JA"
+  check $b submit "末尾まで取り込まれていない"   3 無 headonly 60 "$SHORT_MULTI"
   check $b submit "先頭がハイフンの入力が届かない" 3 無 drop 60 "--help" $'❯ unrelated\n'
   check $b submit "探針が perl コード風で届かない" 3 無 drop 60 '-e;BEGIN{print qq(EXECUTED);exit 0}' $'❯ unrelated\n'
 done

@@ -16,7 +16,7 @@
 
 ## (3) list のフィールドと既存ペインの起用の読み替え
 
-`list` の各ペインは `agent` / `agent_status` を持たず、代わりに `commands`（surface 配下プロセスのコマンドライン一覧）を持つ。`scroll.viewport_rows` も持たないため、SKILL.md「応答の受け取り」の画面読みの行数規則の初期値は 200 とし、倍化と 800 行の上限はそのまま適用する。`existing-pane.md` の手順1〜3は次のとおり読み替える — 候補列挙（手順1）は `commands` のいずれかにカタログ CLI 名が現れるペインを対象にし、起用ゲートと CLI の確定（手順2・3）は `commands` から**一意に**解決できたカタログ CLI 名で行う（0件・複数のカタログ CLI 名が現れた場合は採用せず、照合結果を散文提示で示す）。idle の確認は `agent-wait --until idle` の短時間実行（例: `MUX_CMUX_QUIET_MS=8000` で 20 秒）が idle を返すことで代替する。
+`list` の各ペインは `agent` / `agent_status` を持たず、代わりに `commands`（surface 配下プロセスのコマンドライン一覧）を持つ。`scroll.viewport_rows` も持たないため、SKILL.md「応答の受け取り」の画面読みの行数規則の初期値は 200 とし、倍化と 1000 行の上限はそのまま適用する（cmux の `read-screen` の最大行数は未実測）。`existing-pane.md` の手順1〜3は次のとおり読み替える — 候補列挙（手順1）は `commands` のいずれかにカタログ CLI 名が現れるペインを対象にし、起用ゲートと CLI の確定（手順2・3）は `commands` から**一意に**解決できたカタログ CLI 名で行う（0件・複数のカタログ CLI 名が現れた場合は採用せず、照合結果を散文提示で示す）。idle の確認は `agent-wait --until idle` の短時間実行（例: `MUX_CMUX_QUIET_MS=8000` で 20 秒）が idle を返すことで代替する。
 
 ## (4) tabs / layout
 

@@ -34,6 +34,8 @@ cwd の trust が `~/.codex/config.toml` に未記録だと、git リポジト�
 
 ## 検証記録
 
+2026-10-14 実測（指揮者 = Claude Code、herdr 0.9.3 バックエンド、codex-cli 0.162.1 / gpt-6.1-sol high。直送上限の見直し）: 3,000〜48,000 文字の `submit` が 2〜15 秒で通り、照合はすべて一致。長文の取り込み中に送った Enter は吸収される（`submit` は末尾の出現を待ってから Enter を送るため影響しない）。送信本文は会話内に全文エコーされる（詳細は `../direct.md` の実測記録）。
+
 2026-07-30 実測（利用スキルからの委譲2件・同一ペインへの追送を含む計5回の実運用）: trust 済みプロジェクトでのダイアログなし起動 / エージェント検知（`codex`・status・session）/ `agent_session` 無し working 応答と pane read 二分での受理確定 / auto_review による書き込み・push の無人裁定 / 完了 push の到達（5/5）/ 同一ペインへの次の委譲での文脈保持 / ペイン表示での実測モデル確認（`gpt-5.6-terra max`）。
 
 2026-09-15 実測（指揮者 = Claude Code、Codex v0.154.0 / gpt-6-astra high、herdr バックエンド。入力欄への Enter 送信の再現実験、有効試行 40 件）: `send` 直後に間を置かず `key Enter` を送ると、起動直後 idle・処理後の安定 idle・working 中のいずれでも入力欄にテキストが残って送信されない（12 試行中 7 件。残存時は Enter 単独の再送 1 回で毎回回復）。`send` → 1 秒 → Enter（7/7）、`send` → 画面への出現確認 → Enter（6/6）、herdr の一体送信 API `pane run`（8/8）・`agent prompt`（6/6）はすべて送信された。working 中に送信されたメッセージは Codex の「次のツール呼び出し後に送信」待ち行列に入り、Tab は不要。この実測が `mux.sh submit` の根拠（ADR 0015）。`submit` 自体の実測: idle 中 3 回・日本語本文・3 行本文・working 中の各 1 回がすべて送信され、二重送信なし。`answer "1"` による trust ダイアログの通過、`close` の消滅確認も実測。副次観測: `herdr agent wait --until idle` が、`agent get` では idle を返す状態でタイムアウトすることが 2 回あった（同じコマンドが直後には即時に返る）。また Codex はターン完了後に idle でなく done を報告することがある（実験スクリプトでは idle または done を待って解消）。

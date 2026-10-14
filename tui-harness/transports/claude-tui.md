@@ -30,6 +30,8 @@ cd '<プロジェクトルート>' && claude --permission-mode auto --model '<�
 
 ## 検証記録
 
+2026-10-14 実測（指揮者 = Claude Code、herdr 0.9.3 バックエンド、Claude Code 2.1.299 / claude-sonnet-5。直送上限の見直し）: 3,000〜48,000 文字の `submit` が 1〜3 秒で通り、照合はすべて一致。長い送信本文は会話内で途中が `(N lines hidden)` に畳まれ、先頭数十行と末尾が残る（詳細は `../direct.md` の実測記録）。
+
 2026-10-14 実測（指揮者 = Claude Code、Claude Code 2.1.299、herdr バックエンド）: `claude-sonnet-5` を `--permission-mode auto` で起動し、ステータス行に `⏵⏵ auto mode on` が出ること、`git log` と `gh pr list` の実行がダイアログなしで通ることを確認した。`claude-haiku-4-5-20251001` では同じ起動コマンドでエラーなく `⏸ manual mode on` になった。未検証: auto mode の初回利用時に出うる案内ダイアログ（本機は利用済みのため出なかった）、分類器が操作を拒否したときの画面。
 
 2026-09-15 実測（指揮者 = Claude Code、herdr バックエンド。`mux.sh submit` の導入検証、ADR 0015）: Claude Code 2.1.270 / claude-haiku-4-5-20251001。trust ダイアログ（既定 `No, exit`）を Down → Enter で通過 / `submit` 1 回で送信（送信エコー `❯` と返答 `⏺ OK` を回収）/ `close` の消滅確認。

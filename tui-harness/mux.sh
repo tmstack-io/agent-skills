@@ -93,22 +93,32 @@ normalize_screen() {
   perl -CS -pe 's/[\x{2800}-\x{28FF}0-9]//g'
 }
 
-# 送信テキストの出現確認に使う探針: 先頭行の先頭 40 文字（文字単位。バイト切りで UTF-8 を壊さない）。
+# 送信テキストの出現確認に使う探針: 末尾の空白を除いた本文の末尾 40 文字（文字単位。バイト切りで
+# UTF-8 を壊さない）。入力欄は長い本文の末尾（カーソル位置）を表示するため、先頭行は画面外へ
+# 押し出されうるが末尾は残る。取り込みの遅い TUI では末尾の出現が取り込み完了の印にもなる。
 probe_of() {
-  printf '%s' "$1" | head -n1 | perl -CS -ne 'print substr($_, 0, 40); exit'
+  printf '%s' "$1" | perl -CS -0777 -ne 's/\s+\z//; print substr($_, -40)'
+}
+
+# 送信テキストの出現待ちのタイムアウト（ms）: 6 秒＋1 文字あたり 20ms。長文の貼り付けを
+# 取り込みきるまでの時間がハーネスによって大きく異なるため、本文の長さに比例させる。
+echo_timeout_of() {
+  printf '%s' "$1" | perl -CS -0777 -ne 'print 6000 + 20 * length'
 }
 
 # 送信テキストの出現確認: 可視画面に探針が現れるまで待つ（現れなければ非0）。
 # TUI の入力欄は長い入力を折り返して表示し、継続行にインデントを付ける（折り返し位置は
-# 空白とは限らず、パスの途中でも切れる）。そのため探針の文字間には画面上の空白・改行の
-# 挿入を許し、探針内の空白は1文字以上の空白に対応させて照合する（本文の空白が消えた画面は
-# 一致させない）。探針は1文字ずつ quotemeta し、正規表現として解釈しない。
+# 空白とは限らず、パスの途中でも切れる）。枠付きの入力欄では折り返しの継ぎ目に枠線
+# （罫線素片 U+2500–U+257F）やスクロールバー（ブロック要素 U+2580–U+259F）も入る。そのため
+# 探針の文字間には画面上の空白・改行・罫線・ブロック要素の挿入を許し、探針内の空白は1文字
+# 以上の空白に対応させて照合する（本文の空白が消えた画面は一致させない）。探針は1文字ずつ
+# quotemeta し、正規表現として解釈しない。
 wait_echo() { # <ペインID> <探針> <タイムアウトms>
   local deadline=$(( $(date +%s) + ($3 + 999) / 1000 ))
   while :; do
     "$0" read "$1" --lines 40 2>/dev/null | perl -CSA -0777 -ne '
-      BEGIN { $p = shift @ARGV; $p =~ s/\s+/ /g;
-              $re = join "\\s*", map { $_ eq " " ? "\\s+" : quotemeta } split //, $p }
+      BEGIN { $p = shift @ARGV; $p =~ s/\s+/ /g; $g = "[\\s\\x{2500}-\\x{259F}]*";
+              $re = join $g, map { $_ eq " " ? "\\s" : quotemeta } split //, $p }
       exit(/$re/ ? 0 : 1)' -- "$2" && return 0
     [ "$(date +%s)" -ge "$deadline" ] && return 1
     sleep 1
@@ -148,8 +158,8 @@ case "$cmd" in
     require_pane "$pane" submit
     probe=$(probe_of "$text")
     "$0" send "$pane" "$text" || exit 1
-    wait_echo "$pane" "$probe" 6000 \
-      || { echo "submit: 送信テキストがペインの画面に現れない（TUI 初期化中の破棄の可能性）: $pane" >&2; exit 3; }
+    wait_echo "$pane" "$probe" "$(echo_timeout_of "$text")" \
+      || { echo "submit: 送信テキストの末尾がペインの画面に現れない（TUI 初期化中の破棄、または長文の取り込みが待ち時間内に終わらない可能性）: $pane" >&2; exit 3; }
     before=$("$0" read "$pane" --lines 40 | normalize_screen)
     status_before=$(agent_status_of "$pane")
     for _ in 1 2 3; do

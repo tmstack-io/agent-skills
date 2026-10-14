@@ -6,7 +6,8 @@ case "$1" in
   workspace) echo '{"workspaces":[{"id":"ws1","title":"mock"}]}' ;;
   rpc) echo '{"surfaces":[{"id":"p1","ref":"surface:1","title":"","focused":false}]}' ;;
   top) : ;;
-  read-screen) cat "$D/screen" ;;
+  read-screen) # --lines <N> の指定どおり末尾 N 行だけ返す
+    n=$(printf '%s\n' "$@" | grep -A1 -x -- --lines | tail -n1); tail -n "${n:-20}" "$D/screen" ;;
   send) [ "${MOCK_MODE:-}" = drop ] || python3 "$(dirname "$0")/render.py" "$D/screen" "$4" ;;
   send-key) echo "$4" >> "$D/keys"; echo "● working" >> "$D/screen" ;;
   *) echo "cmux モック: 未対応 $*" >&2; exit 9 ;;
