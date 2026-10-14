@@ -157,7 +157,7 @@ resolve_claude_model() {
 
   ids=$(models_claude) || return 1
   printf '%s\n' "$ids" | grep -Fxq "$spec" || {
-    echo "Claude モデル一覧に一致する ID がない: ${spec}（$CLAUDE_MODELS_FILE を更新するか、掲載 ID を指定）" >&2
+    echo "Claude モデル一覧に一致する ID がない: ${spec}（update-claude-models.sh で一覧を再生成するか、掲載 ID を指定）" >&2
     return 1
   }
   printf '%s\n' "$spec"
@@ -342,7 +342,7 @@ probe_claude() {
   printf '%s\n' "$auth" | grep -Eq '"loggedIn"[[:space:]]*:[[:space:]]*true' \
     || { printf 'claude\texcluded\t認証切れ（claude auth login が必要）\n'; return; }
   if out=$(models_claude 2>&1); then
-    printf 'claude\tok\tmodels: %s ／ API 取得済み静的一覧（models/claude.txt）／ reasoning effort は <モデル>@<エフォート> 形で指定（許容値: models/claude-efforts.txt）\n' "$(printf '%s\n' "$out" | join_lines)"
+    printf 'claude\tok\tmodels: %s ／ 静的一覧（models/claude.txt。update-claude-models.sh で再生成）／ reasoning effort は <モデル>@<エフォート> 形で指定（許容値: models/claude-efforts.txt）\n' "$(printf '%s\n' "$out" | join_lines)"
   else
     printf 'claude\texcluded\t%s\n' "$(printf '%s' "$out" | head -n1 | cut -c1-160)"
   fi

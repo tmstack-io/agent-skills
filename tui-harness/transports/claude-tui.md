@@ -10,7 +10,7 @@ Claude Code の `claude` CLI をペインで起用するときのハーネス固
 cd '<プロジェクトルート>' && claude --permission-mode auto --model '<モデルID>'
 ```
 
-- **モデル ID は必須**: `catalog.sh models claude` が返す `models/claude.txt` 掲載 ID を指定する。Claude CLI からモデル一覧を正確に取得できないため、`opus` / `sonnet` / `fable` 等の可変別名と未掲載 ID は使わない。末尾に `[1m]` が付いた指定（1M トークンコンテキスト版）は、`[1m]` を除いた部分が掲載 ID なら元の値のまま `--model` に渡す。
+- **モデル ID は必須**: `catalog.sh models claude` が返す `models/claude.txt` 掲載 ID を指定する。Claude CLI からモデル一覧を正確に取得できないため、`opus` / `sonnet` / `fable` 等の可変別名と未掲載 ID は使わない（新モデルは `../update-claude-models.sh` で一覧を再生成してから使う）。末尾に `[1m]` が付いた指定（1M トークンコンテキスト版）は、`[1m]` を除いた部分が掲載 ID なら元の値のまま `--model` に渡す。
 - 呼び出し側が reasoning effort を指定した場合は `--effort <level>` を付加する（effort は実行設定であり、モデル系統の照合には含めない）。
 - **`auto`（auto mode）**: ファイル編集とシェル実行の許否を Claude Code の分類器が判定し、安全と判定した操作は承認ダイアログを出さずに実行する（`acceptEdits` ではシェル実行のたびにダイアログが出て、指揮者裁定が委譲の大半を占めたため）。全面的な権限バイパスは使わない。分類器はプロジェクト全域の編集と、分類器が安全と判定したシェル実行を無確認で通す（成果物置き場外への書き込みを遮断しない。防御の正本は ../SKILL.md「呼び出しパラメータ」の裁定スコープ項）。それでも出るダイアログは共通手順の指揮者裁定へ送る。
 - **auto mode の起動確認**: auto mode に対応しないモデル（`claude-haiku-4-5-20251001` で実測）を指定すると、claude はエラーを出さずに `manual mode`（全操作を確認するモード）で起動する。起動シーケンスの末尾に `<mux.sh> read "$PANE" | grep -F 'auto mode on' || echo 'auto-mode=off'` を加えて束ね、`auto-mode=off` が出たら、そのペインを ../SKILL.md「クローズ」の手順で閉じ、「auto mode に対応するモデルを指定し直す（推奨）」「`--permission-mode acceptEdits` で起動し直す（シェル実行のたびに裁定が要る）」「委譲を中止する」を散文提示で確認する。

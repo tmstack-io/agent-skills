@@ -1,11 +1,16 @@
-# Anthropic API 取得済みのモデル ID 一覧（取得日: 2026-08-15）。新モデルの発表・提供終了時に更新する。
-claude-opus-5
-claude-sonnet-5
+# claude ペイン起用の静的モデル一覧（update-claude-models.sh が生成。取得日: 2026-10-14）。
+# 取得元: https://platform.claude.com/docs/en/about-claude/model-deprecations.md の Retired 以外のうち、claude CLI で起動確認できた ID。
+claude-fable-5-1
 claude-fable-5
+claude-opus-5-5
+claude-opus-5
 claude-opus-4-8
 claude-opus-4-7
-claude-sonnet-4-6
 claude-opus-4-6
 claude-opus-4-5-20251101
-claude-haiku-4-5-20251001
+claude-sonnet-5-5
+claude-sonnet-5
+claude-sonnet-4-6
 claude-sonnet-4-5-20250929
+claude-haiku-5-5
+claude-haiku-4-5-20251001
