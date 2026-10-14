@@ -53,6 +53,7 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 | publish-polish | 公開予定のドキュメント・コードコメントを初見の読者に成立する公開品質へ書き換え（漏えい疑いは警告のみ。`--style` で文体・体裁・構成の磨き込みも提案、`--auto` で承認を自動化） |
 | session-to-prompt | セッションの決定事項から宛先別の自己完結実装プロンプトを生成 |
 | sidebar | 実行中と別系統のモデルへセッションの文脈を添えて問いを投げ、以後の壁打ちをそのペインでユーザーに引き渡す別席相談（TUI マルチプレクサ環境専用。片道委譲・1席・工程非依存。前回のペインが生きていれば差分だけを添えて追問できる） |
+| skill-create | 新規スキルを固定工程で作成するフロー（grill-with-docs で機能を詰めて決定事項を設計メモに残す → writing-for-agents・skill-refine の査読基準・作業先の規約に従って執筆し、設計メモとの対応と自己点検で閉じる → skill-refine を `--auto 推奨` で収束まで回す → 査読後のスキルが決定事項を保っているかを照合し、判断が要る食い違いだけを確認。`--myself` / `--project` で適用範囲を指定し skill-refine にそのまま渡す。`--max N` も skill-refine へ。コミットはしない） |
 | skill-feedback | 同一セッションで実際に使ったスキルの実行の証跡（逸脱・補完・介入・空振り）から問題点を洗い出し、汎化テストを通った修正だけを承認後に SKILL.md へ適用（skill-refine の静的査読と別系統のセッション駆動改善。汎化の地平は対象の適用範囲で切替 — `--myself` でハーネス軸、`--project` でプロジェクト軸を免除） |
 | skill-refine | 既存スキルの査読→承認→洗練を行うメタスキル（点検は独立3体の多重点検で過半数指摘のみ正規受理。craft 基準は writing-for-agents（`mattpocock/skills`）を正本として適用。既定は汎用スキル基準。`--myself` で実行ハーネス専用基準、`--project` でプロジェクト専用基準に切り替え。`--auto [推奨|must|全件]` で承認範囲を指定値で自動確定して無人で周回（`--max N` で上限、既定5）） |
 | slack-research | プロジェクトに紐づく Slack ワークスペースの読み取り専用調査（`.slack-research-env` の User Token で curl から Web API を直接呼ぶ。MCP 不要・複数ワークスペースはプロジェクト毎のトークンで切り替え） |
@@ -63,7 +64,7 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 
 ## スキル間の依存
 
-smart-commit・to-chat と impact-investigation（`--for` 時のみ）は plainify に依存する。deep-pr-review / sidebar / tandem は tui-harness に依存し（必須）、maestro はペイン経路（サブエージェント機構が無い実行ハーネス、またはハーネス指定のロール）でのみ tui-harness に依存する。deep-pr-review は plainify にも依存する（必須）。skill-refine はサブエージェント機構が無い環境の点検ペイン経路でのみ tui-harness に依存する（TUI 環境も無ければ自己実行へ縮退）。pr-comment / pr-recheck / pr-respond は publish-polish と plainify に依存し（pr-recheck / pr-respond は pr-comment 同梱の公開整形契約も参照する）。matt-flow はリポジトリ外の `mattpocock/skills`（grill-with-docs / grilling / domain-modeling / codebase-design / to-spec / to-tickets / implement / tdd / code-review）に依存する（必須。導入は `npx skills add mattpocock/skills`）。各スキルは実行前に依存先を「自スキルの隣 → 実行ハーネス自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
+smart-commit・to-chat と impact-investigation（`--for` 時のみ）は plainify に依存する。deep-pr-review / sidebar / tandem は tui-harness に依存し（必須）、maestro はペイン経路（サブエージェント機構が無い実行ハーネス、またはハーネス指定のロール）でのみ tui-harness に依存する。deep-pr-review は plainify にも依存する（必須）。skill-refine はサブエージェント機構が無い環境の点検ペイン経路でのみ tui-harness に依存する（TUI 環境も無ければ自己実行へ縮退）。pr-comment / pr-recheck / pr-respond は publish-polish と plainify に依存し（pr-recheck / pr-respond は pr-comment 同梱の公開整形契約も参照する）。matt-flow はリポジトリ外の `mattpocock/skills`（grill-with-docs / grilling / domain-modeling / codebase-design / to-spec / to-tickets / implement / tdd / code-review）に依存する（必須。導入は `npx skills add mattpocock/skills`）。skill-create は skill-refine と、リポジトリ外の `mattpocock/skills`（grill-with-docs / grilling / domain-modeling / writing-for-agents）に依存する（必須。導入は `npx skills add mattpocock/skills`）。各スキルは実行前に依存先を「自スキルの隣 → 実行ハーネス自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
 
 ## アーカイブ
 

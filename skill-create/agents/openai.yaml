@@ -1,0 +1,5 @@
+interface:
+  display_name: "Skill Create"
+  short_description: "新規スキルを設計から自動査読までの固定工程で作成"
+policy:
+  allow_implicit_invocation: false
