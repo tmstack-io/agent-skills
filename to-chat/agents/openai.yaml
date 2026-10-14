@@ -1,0 +1,3 @@
+interface:
+  display_name: "To Chat"
+  short_description: "会話の内容をチャット投稿文にまとめる"

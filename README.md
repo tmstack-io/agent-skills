@@ -58,11 +58,12 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 | slack-research | プロジェクトに紐づく Slack ワークスペースの読み取り専用調査（`.slack-research-env` の User Token で curl から Web API を直接呼ぶ。MCP 不要・複数ワークスペースはプロジェクト毎のトークンで切り替え） |
 | smart-commit | 未コミット変更を論理単位の atomic コミットへ自動分割・登録（規約検出・単位ごと軽量検証つき） |
 | tandem | 実行エージェントが著者として課題を進めながら、ハーネス1ペインを相談役に立て、指摘・意見の往復を収束（LGTM）まで中継する二人三脚協働（TUI マルチプレクサ環境専用。相談では異系統を推奨・`--pane` で稼働中の既存ペインを採用可・`--direct` で初回ブリーフ以後の追問をペインへ直接送る直送モード・`--invoke` で依頼文に名指しした明示起動スキルをペインで代理実行する代理実行型） |
+| to-chat | 会話の内容を Slack・Teams・Google Chat に貼り付ける投稿文にまとめる（plainify で読者適応・既定はどのチャットでも崩れないチャット共通記法。`--for <読者>` で読者指定、`--plain` でプレーンテキスト、`--table` で表を許可。投稿はユーザーが行う） |
 | tui-harness | TUI マルチプレクサのペインで他 LLM ハーネス（codex / cursor-agent / agy / claude / grok / hermes）を起動・委譲・回収する基盤（`mux.sh` / `catalog.sh` / モデル系統の照合 / ハーネス別 transports。現行バックエンド herdr / cmux） |
 
 ## スキル間の依存
 
-smart-commit と impact-investigation（`--for` 時のみ）は plainify に依存する。deep-pr-review / sidebar / tandem は tui-harness に依存し（必須）、maestro はペイン経路（サブエージェント機構が無い実行ハーネス、またはハーネス指定のロール）でのみ tui-harness に依存する。deep-pr-review は plainify にも依存する（必須）。skill-refine はサブエージェント機構が無い環境の点検ペイン経路でのみ tui-harness に依存する（TUI 環境も無ければ自己実行へ縮退）。pr-comment / pr-recheck / pr-respond は publish-polish と plainify に依存し（pr-recheck / pr-respond は pr-comment 同梱の公開整形契約も参照する）。matt-flow はリポジトリ外の `mattpocock/skills`（grill-with-docs / grilling / domain-modeling / codebase-design / to-spec / to-tickets / implement / tdd / code-review）に依存する（必須。導入は `npx skills add mattpocock/skills`）。各スキルは実行前に依存先を「自スキルの隣 → 実行ハーネス自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
+smart-commit・to-chat と impact-investigation（`--for` 時のみ）は plainify に依存する。deep-pr-review / sidebar / tandem は tui-harness に依存し（必須）、maestro はペイン経路（サブエージェント機構が無い実行ハーネス、またはハーネス指定のロール）でのみ tui-harness に依存する。deep-pr-review は plainify にも依存する（必須）。skill-refine はサブエージェント機構が無い環境の点検ペイン経路でのみ tui-harness に依存する（TUI 環境も無ければ自己実行へ縮退）。pr-comment / pr-recheck / pr-respond は publish-polish と plainify に依存し（pr-recheck / pr-respond は pr-comment 同梱の公開整形契約も参照する）。matt-flow はリポジトリ外の `mattpocock/skills`（grill-with-docs / grilling / domain-modeling / codebase-design / to-spec / to-tickets / implement / tdd / code-review）に依存する（必須。導入は `npx skills add mattpocock/skills`）。各スキルは実行前に依存先を「自スキルの隣 → 実行ハーネス自身のスキルディレクトリ（プロジェクト側 → グローバル側）」の順で探し、見つからなければ復旧手順を案内して中止する。部分インストールする場合は依存先も併せて導入すること。
 
 ## アーカイブ
 
