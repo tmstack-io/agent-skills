@@ -17,8 +17,9 @@
 #   mux.sh run <ペインID> <コマンド文字列>       … ペインでコマンドを起動する
 #   mux.sh submit <ペインID> <テキスト>
 #       ハーネスの入力欄へテキストを送って送信する（委譲・question 回答・直送の追送・
-#       通信規約の push はすべてこれを使う）。send → 先頭行の出現確認（入力欄での
-#       折り返しを許して照合する）→ Enter →
+#       通信規約の push はすべてこれを使う）。paste → 末尾の出現確認（入力欄での
+#       折り返しを許して照合する。貼り付けを [Pasted …] に畳んで表示するハーネスでは
+#       畳み表示の増加で確認する）→ Enter →
 #       入力欄の変化確認（変化しなければ Enter を再送、合計 3 回）の順で行い、
 #       exit 0 = 送信済み / 3 = テキストが画面に現れない（TUI 初期化中の破棄の可能性）/
 #       4 = Enter を再送しても入力欄が変わらない。テキストと Enter を同一バーストで
@@ -27,7 +28,10 @@
 #   mux.sh answer <ペインID> <テキスト>
 #       ダイアログ（番号選択等）へテキストを送って Enter で確定する（send → 1 秒 → Enter）。
 #       出現確認が成立しない選択 UI 向け。入力欄への送信には使わない（submit を使う）。
-#   mux.sh send <ペインID> <テキスト>            … テキストを送る（Enter は送らない）
+#   mux.sh send <ペインID> <テキスト>            … テキストを打鍵で送る（Enter は送らない）
+#   mux.sh paste <ペインID> <テキスト>           … テキストを1回の貼り付けとして送る（Enter は
+#       送らない。複数行・長文を入力欄へ入れる経路。cmux の send は改行を Enter として打鍵し、
+#       長文の打鍵は途中で止まるため、submit はこちらを使う）
 #   mux.sh key <ペインID> <キー名>               … キーを送る（例: Enter, y, Down）
 #   mux.sh read <ペインID> [--scrollback] [--lines <N>]
 #       画面を読む。--scrollback は折り返し前の履歴ソース（alt-screen 描画の
@@ -40,7 +44,7 @@
 #       --until なしは idle / done / blocked のいずれかで発火する（pull 安全網用）。
 #   mux.sh close <ペインID>                      … ペインを閉じ、消滅を確認してから戻る
 #
-#   send / key / run / submit / answer / close は、対象ペイン ID が list に存在することを
+#   send / paste / key / run / submit / answer / close は、対象ペイン ID が list に存在することを
 #   確認してから実行する（存在しなければ非0。古い ID への誤送信の防止）。
 #   mux.sh self                                  … 本スクリプトを実行しているペイン自身の
 #       情報 JSON（pane_id / tab_id / workspace_id）。自ペイン・自ワークスペースの特定は
@@ -100,6 +104,12 @@ probe_of() {
   printf '%s' "$1" | perl -CS -0777 -ne 's/\s+\z//; print substr($_, -40)'
 }
 
+# 貼り付けの畳み表示（claude: [Pasted text #1 +67 lines] / codex: [Pasted Content 3133 chars] /
+# grok: [Pasted: 68 lines]。cmux の貼り付けで実測）の可視画面上の個数。
+paste_marks_of() { # <ペインID>
+  "$0" read "$1" --lines 40 2>/dev/null | perl -CS -0777 -ne 'my $n = () = /\[Pasted[^\]\n]*\]/g; print $n'
+}
+
 # 送信テキストの出現待ちのタイムアウト（ms）: 6 秒＋1 文字あたり 20ms。長文の貼り付けを
 # 取り込みきるまでの時間がハーネスによって大きく異なるため、本文の長さに比例させる。
 echo_timeout_of() {
@@ -113,9 +123,11 @@ echo_timeout_of() {
 # 探針の文字間には画面上の空白・改行・罫線・ブロック要素の挿入を許し、探針内の空白は1文字
 # 以上の空白に対応させて照合する（本文の空白が消えた画面は一致させない）。探針は1文字ずつ
 # quotemeta し、正規表現として解釈しない。
-wait_echo() { # <ペインID> <探針> <タイムアウトms>
+wait_echo() { # <ペインID> <探針> <タイムアウトms> [送信前の畳み表示の個数]
   local deadline=$(( $(date +%s) + ($3 + 999) / 1000 ))
   while :; do
+    # 畳み表示が送信前より増えたら、貼り付けが入力欄に入ったとみなす（本文は画面に出ない）。
+    if [ -n "${4:-}" ] && [ "$(paste_marks_of "$1")" -gt "$4" ]; then return 0; fi
     "$0" read "$1" --lines 40 2>/dev/null | perl -CSA -0777 -ne '
       BEGIN { $p = shift @ARGV; $p =~ s/\s+/ /g; $g = "[\\s\\x{2500}-\\x{259F}]*";
               $re = join $g, map { $_ eq " " ? "\\s" : quotemeta } split //, $p }
@@ -127,7 +139,7 @@ wait_echo() { # <ペインID> <探針> <タイムアウトms>
 
 cmd=${1:-}
 [ -n "$cmd" ] || {
-  echo "usage: mux.sh detect|split|run|submit|answer|send|key|read|wait-output|agent-wait|close|self|list|tabs|layout ..." >&2
+  echo "usage: mux.sh detect|split|run|submit|answer|send|paste|key|read|wait-output|agent-wait|close|self|list|tabs|layout ..." >&2
   exit 2
 }
 shift
@@ -157,8 +169,9 @@ case "$cmd" in
     pane=$1 text=$2
     require_pane "$pane" submit
     probe=$(probe_of "$text")
-    "$0" send "$pane" "$text" || exit 1
-    wait_echo "$pane" "$probe" "$(echo_timeout_of "$text")" \
+    marks=$(paste_marks_of "$pane")
+    "$0" paste "$pane" "$text" || exit 1
+    wait_echo "$pane" "$probe" "$(echo_timeout_of "$text")" "$marks" \
       || { echo "submit: 送信テキストの末尾がペインの画面に現れない（TUI 初期化中の破棄、または長文の取り込みが待ち時間内に終わらない可能性）: $pane" >&2; exit 3; }
     before=$("$0" read "$pane" --lines 40 | normalize_screen)
     status_before=$(agent_status_of "$pane")
@@ -202,6 +215,12 @@ case "$BACKEND" in
       send)
         [ $# -eq 2 ] || { echo "usage: mux.sh send <ペインID> <テキスト>" >&2; exit 2; }
         require_pane "$1" send
+        herdr pane send-text "$1" "$2"
+        ;;
+      paste)
+        # herdr の send-text は改行で送信されず、入力欄に1回の入力として入る（実測）ため send と同じ。
+        [ $# -eq 2 ] || { echo "usage: mux.sh paste <ペインID> <テキスト>" >&2; exit 2; }
+        require_pane "$1" paste
         herdr pane send-text "$1" "$2"
         ;;
       key)
@@ -348,6 +367,11 @@ PY
         [ $# -eq 2 ] || { echo "usage: mux.sh send <ペインID> <テキスト>" >&2; exit 2; }
         require_pane "$1" send
         cmux send --surface "$1" "$2" >/dev/null
+        ;;
+      paste)
+        [ $# -eq 2 ] || { echo "usage: mux.sh paste <ペインID> <テキスト>" >&2; exit 2; }
+        require_pane "$1" paste
+        cmux send --paste --surface "$1" "$2" >/dev/null
         ;;
       key)
         # cmux の send-key は特殊キー（enter / esc / ctrl+c 等）用で、平文字の単キーは

@@ -70,6 +70,10 @@ for b in herdr cmux; do
   check $b submit "先頭行が読み取り範囲外の複数行" 0 有 hard   60 "$MULTI"
   check $b submit "枠線付き入力欄での折り返し"   0 有 box    20 "$JA"
   check $b submit "末尾まで取り込まれていない"   3 無 headonly 60 "$SHORT_MULTI"
+  check $b submit "貼り付けが畳み表示で入る"     0 有 collapse 60 "$MULTI"
+  check $b submit "畳み表示が増えない"           3 無 drop   60 "$SHORT_MULTI" $'❯ [Pasted Content 10 chars]\n'
+  check $b submit "前の畳み表示が残る中で畳み入力" 0 有 collapse 60 "$SHORT_MULTI" $'⏺ [Pasted text #1 +3 lines]\n'
+
   check $b submit "先頭がハイフンの入力が届かない" 3 無 drop 60 "--help" $'❯ unrelated\n'
   check $b submit "探針が perl コード風で届かない" 3 無 drop 60 '-e;BEGIN{print qq(EXECUTED);exit 0}' $'❯ unrelated\n'
 done

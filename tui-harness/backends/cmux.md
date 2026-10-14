@@ -32,15 +32,16 @@
 
 ## 実測範囲と未実測
 
-cmux での実測範囲: mux.sh 全サブコマンド（`self` と、`layout` の自ワークスペース固定を除く）、codex / grok の委譲一巡（起動・trust 通過・受理・完了検知・回収・クローズ）、委譲先（codex）自身による通信規約の push 送達。
+cmux での実測範囲: mux.sh 全サブコマンド（`self` と、`layout` の自ワークスペース固定を除く）、codex / grok の委譲一巡（起動・trust 通過・受理・完了検知・回収・クローズ）、委譲先（codex）自身による通信規約の push 送達、claude / codex / grok / agy への直送委譲の送信と返答の回収（2026-10-14）。
 
-未実測: `submit` / `answer` と `wait-output` のリテラル一致化（2026-09-15 の変更。herdr でのみ実測）、`self`（env 組み立ての cmux セッション内動作）、`layout` の自ワークスペース固定（`--workspace` 指定での挙動）、blocked（承認ダイアログ）場面の安全網検知と裁定、既存ペインの起用（`existing-pane.md`）の cmux 代替判定（`commands` 照合・短時間 idle 判定）、claude / cursor-agent / agy / hermes の各初期ダイアログ（transports の実測記録は herdr 指揮者のもの）。
+未実測: `answer` と `wait-output` のリテラル一致化（2026-09-15 の変更。herdr でのみ実測）、`self`（env 組み立ての cmux セッション内動作）、`layout` の自ワークスペース固定（`--workspace` 指定での挙動）、blocked（承認ダイアログ）場面の安全網検知と裁定、既存ペインの起用（`existing-pane.md`）の cmux 代替判定（`commands` 照合・短時間 idle 判定）、claude / cursor-agent / agy / hermes の各初期ダイアログ（transports の実測記録は herdr 指揮者のもの）。
 
-2026-10-14 実測（指揮者 = Claude Code。herdr ペインから `HERDR_ENV=0 CMUX_SOCKET_PATH=<cmux の socket>` で cmux 0.65.1 を操作。直送委譲の可否の確認）:
+2026-10-14 実測（指揮者 = Claude Code。herdr ペインから `HERDR_ENV=0 CMUX_SOCKET_PATH=<cmux の socket>` で cmux 0.65.1 を操作。委譲先 = claude-sonnet-5 / codex gpt-6.1-sol / grok-4.7 / agy gemini-3.8-flash-high。直送委譲の可否の確認）:
 
 - `split`: `new-split` は新ペインの ref を出力するが、`surface.list` に現れるのは 0.5〜1 秒後。mux.sh は出力の ref が一覧に現れるまで待つ。
 - `close`: `close-surface` は `--workspace` が無いと `$CMUX_WORKSPACE_ID` に頼る（cmux 端末外では失敗する）。また、プロセスが動いているペインには `--force` が要る。mux.sh は list から引いたワークスペースと `--force` を渡す。
 - `read --scrollback`: `read-screen` は要求した行数をそのまま返す（6000 行の出力を全行読めた）。行数規則の上限 1000 行は herdr に合わせたもの。
-- **`send` は改行を Enter として打鍵する**（`\n` 等のエスケープも解釈する）ため、複数行の本文は1行ずつ送信される。`--paste` を付けると1回の貼り付けになるが、claude と grok は入力欄で `[Pasted …]` に畳んで表示するため、`submit` の出現確認（本文末尾の照合）が成立しない。
-- codex・agy のペインは、`send`（`--force` 付き・フォーカス後を含む）と `--paste` のどちらの入力も画面に現れず、codex のセッション記録にも入力が残らなかった（原因未特定）。
-- 以上により、cmux では複数行の直送委譲が成立しない（tandem の直送モード・代理実行型が cmux で中止する規定はこのまま維持する）。
+- `send` は打鍵で送り、改行を Enter として打つ（`\n` 等のエスケープも解釈する）。長文の打鍵は途中で止まり（codex で 3 文字目まで入って停止、CPU 0% のまま以後の入力も画面に現れない）、そのペインは使えなくなる。このため `submit` は `paste`（`cmux send --paste`。1回の貼り付け）で送る。
+- 貼り付けは入力欄で畳まれる: claude `[Pasted text #1 +67 lines]` / codex `[Pasted Content 3133 chars]` / grok `[Pasted: 68 lines]`。agy は全文を表示する。`submit` の出現確認は、本文末尾の照合に加えて畳み表示の増加でも成立する。
+- `submit`（paste）で各行に乱数を埋め込んだ本文を送り、総行数と指定行の値を照合した: claude・codex・grok は 3,000 / 12,000 / 24,000 文字、agy は 3,000 / 6,000 文字で全件一致。送信確認は 2〜4 秒（herdr の打鍵経路で遅かった agy・grok も速い）。
+- 送信本文の会話内エコーは herdr と同じ形（codex・agy は全文、grok は先頭3行、claude は途中を畳む）で、`direct.md`「返答の受け取り」の切り出しが成立する。cmux でも直送委譲を適用してよい。

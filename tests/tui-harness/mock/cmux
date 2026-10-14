@@ -8,7 +8,8 @@ case "$1" in
   top) : ;;
   read-screen) # --lines <N> の指定どおり末尾 N 行だけ返す
     n=$(printf '%s\n' "$@" | grep -A1 -x -- --lines | tail -n1); tail -n "${n:-20}" "$D/screen" ;;
-  send) [ "${MOCK_MODE:-}" = drop ] || python3 "$(dirname "$0")/render.py" "$D/screen" "$4" ;;
+  send) # send [--paste] --surface p1 <テキスト>（テキストは最後の引数）
+    [ "${MOCK_MODE:-}" = drop ] || python3 "$(dirname "$0")/render.py" "$D/screen" "${@: -1}" ;;
   send-key) echo "$4" >> "$D/keys"; echo "● working" >> "$D/screen" ;;
   *) echo "cmux モック: 未対応 $*" >&2; exit 9 ;;
 esac

@@ -4,7 +4,8 @@
 環境変数 MOCK_MODE: word（空白位置で折り返し、継続行に 2 桁インデント）/ hard（幅で切る、継続行に
 2 桁インデント）/ shell（幅で切る、インデントなし。シェルの入力行）/ squash（空白を消して 1 行）/
 box（hard と同じ折り返しで、各行を枠線 │ で囲む）/ headonly（hard と同じ折り返しで、先頭 5 行だけ
-描く。取り込みが途中で止まった入力欄）
+描く。取り込みが途中で止まった入力欄）/ collapse（貼り付けを [Pasted Content N chars] の 1 行に
+畳んで描く）
 複数行のテキストは改行ごとに区切り、2 行目以降を継続行として折り返す。
 環境変数 MOCK_WIDTH: 1 行の幅（既定 60）
 """
@@ -17,6 +18,8 @@ width = int(os.environ.get("MOCK_WIDTH", "60"))
 prompt, indent = ("$ ", "") if mode == "shell" else ("❯ ", "  ")
 if mode == "squash":
     text = text.replace(" ", "")
+if mode == "collapse":
+    text = f"[Pasted Content {len(text)} chars]"
 out = []
 for k, line in enumerate(text.split("\n")):
     line = (prompt if k == 0 else indent) + line

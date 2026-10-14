@@ -168,3 +168,7 @@ _Avoid_: レビューインターフェース、レビュー形式
 **保留**:
 指摘として有効だが GREEN 閾値未満のため、そのループでは修正対象外とする扱い。却下（指摘が誤り）とは区別する。
 _Avoid_: スキップ、未対応
+
+**チャット共通記法**:
+Slack・Microsoft Teams・Google Chat のどれに貼り付けても崩れずに読める、Markdown の部分集合。標準 Markdown（CommonMark）とは別の記法で、どれか一つのチャットでしか表示されない記法は含めない。
+_Avoid_: Markdown（標準 Markdown と区別できない）、mrkdwn（Slack 固有の記法）
