@@ -3,7 +3,8 @@
 SKILL.md 前提ゲート3で PR が closed / merged のまま続行を選んだ場合に Read し、以後 SKILL.md で「返信のみモードの規定に従う」とある箇所はすべて本ファイルの内容を適用する。
 
 - 前提ゲート5は `git status --porcelain` が空であることだけを要求し（ブランチ・head・
-  upstream の一致は要求しない）、`<remote>`・push 先ブランチの確定も求めない。
+  upstream の一致は要求せず、ブランチの切替も行わない）、`<remote>`・push 先ブランチの確定も
+  求めない。
 - 対処判定では妥当（修正済み）・不当・要判断のみを付け、修正を要する指摘は要判断にして
   報告に回す。妥当（修正済み）の根拠コミットは、PR のコミット一覧
   （`gh api --paginate "repos/<owner>/<repo>/pulls/<PR番号>/commits" --jq '.[].sha'`）に
