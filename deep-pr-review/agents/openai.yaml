@@ -1,5 +1,5 @@
 interface:
   display_name: "Deep PR Review"
-  short_description: "GitHub PR を多角度にレビューし、統合レビュー1本を出力する（TUI 専用）"
+  short_description: "GitHub PR を多角度にレビューし、統合レビュー1本を出力する（TUI マルチプレクサ内または T3 Code 上で実行）"
 policy:
   allow_implicit_invocation: false
