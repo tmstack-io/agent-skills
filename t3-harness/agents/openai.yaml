@@ -1,0 +1,5 @@
+interface:
+  display_name: "T3 Harness"
+  short_description: "T3 Code の委譲ツールで別 provider のモデルへ委譲し結果を回収する基盤"
+policy:
+  allow_implicit_invocation: false
