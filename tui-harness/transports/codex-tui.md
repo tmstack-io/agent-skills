@@ -27,6 +27,15 @@ cwd の trust が `~/.codex/config.toml` に未記録だと、git リポジト�
 - **判定不能**: 更新せずに続行する選択肢を文言から特定できない場合は、応答せず `unknown-dialog.md` の (b) に従ってユーザーに確認する。
 - **通過の確認**: このダイアログの表示中も `agent-wait --until idle` は idle を返す（実測）。起動シーケンスの idle 確定後、ブリーフ送信前に `mux.sh read` で入力欄（"Ask Codex to do anything"）の表示を確認し、表示されていなければ画面を読んで本節で裁いてから送信する。
 
+## フックの確認ダイアログ
+
+codex のフック設定に、新規または変更されたフックがあると、起動時にフックの確認ダイアログが出る（codex-cli 0.167.0 の文言: "Hooks need review / 1 hook is new or changed. / Hooks can run outside the sandbox after you trust them."、選択肢 `1. Review hooks` / `2. Trust all and continue` / `3. Continue without trusting (hooks won't run)`）。`mux.sh wait-output <ペインID> "Hooks need review" 15000` で確定待ちし、マッチしたら `mux.sh answer <ペインID> "3"`（信頼せずに続行）で通過する（タイムアウト＝ダイアログなしは正常分岐）。起動シーケンスの `<初期ダイアログ手順>` では、trust ダイアログの手順の後ろに置く。
+
+- **`2`（すべて信頼して続行）は選ばない**: 信頼したフックはサンドボックスの外で実行でき、フックを信頼するかどうかはユーザーの判断事項である。`3` を選んだ起動では、フックは実行されない。
+- **`3` は記録されない**: `3` で通過したあとの次の起動でも、同じダイアログが出た（実測）。起動のたびに確定待ちを付けたままにする。
+- **通過の確認**: ダイアログの表示中も `agent-wait --until idle` は idle を返す（Rex バックエンドで実測。表示中は状態の申告が無く、画面静止推定で成立する）。起動シーケンスの idle 確定後、ブリーフ送信前に `mux.sh read` で入力欄（"Ask Codex to do anything"）の表示を確認する。
+- 文言や選択肢の並びが上記と異なる場合は、番号を固定で送らず、`unknown-dialog.md` に従って裁く。
+
 ## エージェント検知と受理判定
 
 - エージェント名 `codex`。`agent_session`（codex セッション ID）を報告する — 受理完了の判定は ../SKILL.md の「タスクの委譲」手順2の本則（working ＋ `agent_session`）に従う。**`agent_session` 無しの working 応答は実測で発生する** — その場合は同手順3の「作業表示がある → 受理完了」の分岐で受理を確定する。
@@ -45,3 +54,5 @@ cwd の trust が `~/.codex/config.toml` に未記録だと、git リポジト�
 2026-10-09 実測（指揮者 = Claude Code、codex-cli 0.161.0 / gpt-6.1-sol high、herdr バックエンド。deep-pr-review からの委譲）: trust 済み cwd での起動時に、アップデート確認ダイアログ（"Update available · 0.161.0 → 0.162.0"、選択肢 `1. Update now`〔インストールスクリプトを実行〕/ `2. Skip` / `3. Skip until next version`）が表示された。起動シーケンスの agent-wait はダイアログ表示中のまま idle を返し、`mux.sh read` で検知した。更新しない一時的なスキップ（この版では `answer "2"`）で通過し、入力欄 "Ask Codex to do anything" の表示、以後の委譲の受理（working ＋ `agent_session`）・完了 push の到達・`close` の消滅確認まで実測。codex 本体は 0.161.0 のまま（更新されていない）。
 
 2026-08-15 実測（指揮者 = codex のスモーク検証。herdr バックエンド）: codex（on-request + auto_review + workspace-write、cwd はプロジェクト外の一時ディレクトリ）が指揮者として `mux.sh` 全サブコマンド（detect / list / layout / split / run / send / key / read / wait-output / agent-wait / close）を承認要求ゼロで実行 / 内側 codex への委譲 → done push → 回答ファイル回収 → クローズの一巡が成立 / 前面の同期 `agent-wait`（バックグラウンド実行なし）で 240 秒のブロック実行を中断なく完走 / trust ダイアログは指揮者 codex の起用時に表示され `send "1"` ＋ `key Enter` で通過（trust の config.toml への永続記録により、同一 cwd の内側 codex ではダイアログなしの正常分岐）。
+
+2026-11-11 実測（指揮者 = Claude Code、codex-cli 0.167.0 / gpt-6.1-sol high、Rex バックエンド。往復委譲1回と直送委譲の実測）: trust 済みの cwd での起動時に、フックの確認ダイアログ（"Hooks need review"、選択肢 `1. Review hooks` / `2. Trust all and continue` / `3. Continue without trusting (hooks won't run)`）が表示された。1回目の起動では、起動シーケンスの agent-wait がダイアログ表示中のまま idle を返し、`mux.sh read` で検知して `answer "3"` で通過し、入力欄 "Ask Codex to do anything" の表示と以後の委譲の受理を確認した。2回目の起動でも同じダイアログが出て、`wait-output "Hooks need review"` → `answer "3"` の固定手順で通過した。Rex バックエンドでの委譲の一巡と直送委譲の実測は `../backends/rex.md`。
