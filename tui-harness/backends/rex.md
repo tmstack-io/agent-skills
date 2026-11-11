@@ -18,7 +18,7 @@ Rex のペインの中で herdr を動かし、その herdr のペインに指�
 
 - **`--until idle`** は、申告が `idle` または `done` のときに成立する（ターンを終えたハーネスは `done` のまま次の入力を待つ。Codex は次の入力で `idle` に変わる）。
 - **`--until` なし**（pull 安全網）は `idle` / `done` / `blocked` / `error` のいずれかで発火する。`error` で発火したら、SKILL.md「応答の受け取り」の三分類の「done / idle なのに push が無い」と同じ手順で、回答/報告ファイルと画面から結果の回収を試みる。
-- **申告しないハーネス**: hermes（`--tui`・`--cli` とも）と cursor-agent は状態を申告しない。承認待ちも申告されないため、安全網は静止推定の `idle` で発火し、`mux.sh read` の画面で承認ダイアログを見分けて裁く（ダイアログの形と操作は各 transports）。申告の無いペインで意味を持つ `--until` は `working` と `idle` だけである — `--until done` / `--until blocked` は使わず、`--until` なしで発火させて三分類が画面から裁く。
+- **申告しないハーネス**: hermes（`--tui`・`--cli` とも）と cursor-agent は状態を申告しない。承認待ちも申告されないため、安全網は静止推定の `idle` で発火し、`mux.sh read` の画面で承認ダイアログを見分けて裁く（ダイアログの形と操作は各 transports）。ただし hermes の `--tui` は、承認ダイアログの表示中もステータス行の表示（顔文字と動詞）を約3秒ごとに切り替えるため、静止が成立せず安全網が発火しない（0.23.1 実測。ダイアログは既定で 300 秒後に時間切れになる）。hermes の `--tui` へ委譲したら、安全網に加えて `mux.sh wait-output <ペインID> "approval required" <タイムアウトms>` を並べて待ち、一致したら画面を読んで裁く。申告の無いペインで意味を持つ `--until` は `working` と `idle` だけである — `--until done` / `--until blocked` は使わず、`--until` なしで発火させて三分類が画面から裁く。
 - **起動時の確認ダイアログ**: claude と codex は、起動時の確認ダイアログ（フォルダやフックの信頼確認）を表示している間は何も申告しない。agy と grok は `blocked` を申告する。初期ダイアログの通過は、SKILL.md「ペインの起動」の `<初期ダイアログ手順>`（`mux.sh wait-output` による文言の確定待ち）のまま行う。
 - ハーネスのプロセスが終了すると、`working` と `blocked` の申告は消え、`done` と `error` の申告は残る。
 - **`error` のあと**: ターンがエラーで終わったハーネス（モデルの誤指定・利用枠の上限等）は、入力欄を表示していても `error` を申告したままで、`--until idle` は成立しない。`error` の申告には `msg`（エラーの文面）が付くことがあり、原因の特定には `mux.sh read` の画面とあわせて使える。
@@ -64,7 +64,7 @@ Rex でも直送委譲（`direct.md`）を適用してよい。ただし、代�
 
 Rex での実測範囲: 下記の実測記録に挙げた項目に限る。
 
-未実測: hermes の `--tui` での承認ダイアログ（承認対象のコマンド2件が無確認で実行され、ダイアログを観測できなかった）、既存ペインの起用のうち、codex・agy・grok のペインの採用。
+未実測: SKILL.md と各正本が定める手順のうち、Rex で未実測のまま残る項目は無い（各項目の試行回数は下記の実測記録のとおりで、多くは1回である）。
 
 2026-11-10 実測（実測者 = Claude Code。Rex のペインの外から rex CLI をフルパスで操作。各1回の試行）:
 
@@ -188,3 +188,9 @@ Rex での実測範囲: 下記の実測記録に挙げた項目に限る。
 - hermes の承認待ち: `--cli` は `chmod 777 <成果物置き場のファイル>` で「Dangerous Command」のダイアログ（`1` Allow once ／ `2` Allow for this session ／ `3` Add to permanent allowlist ／ `4` Deny ／ `5` Show full command。300 秒の残り時間を表示）を出した。申告は無く、`--until` なしの `agent-wait` が静止推定の `idle` で発火した（残り時間の秒数とスピナーは正規化で無視される）。`answer "4"` で拒否（コマンドは実行されなかった）、`answer "1"` で許可（実行された）。`--tui` は、同じ `chmod 777` と `find … -delete`（一致するファイルなし）をダイアログなしで実行した。
 - cursor-agent の承認待ち（`--auto-review` を付けずに起動）: シェル実行のたびに承認の枠（`Run this command?` ／ `Run (once) (y)` ／ `Add Shell(<コマンド>) to allowlist? (tab)` ／ `Run Everything (shift+tab)` ／ `Skip … (esc or n)`）を出した。申告は無く、安全網は静止推定の `idle` で発火した。`mux.sh key <ペインID> y` で1件ずつ許可でき（`pwd` と push の2件）、ファイルの書き込みは承認なしで行われた。拒否は `n` のあと Enter（指示の入力欄を空のまま送る）で `Rejected` になったが、cursor-agent は同じコマンドを形を変えて（`date` → `/bin/date`）再び求めた。
 - 既存ペインの起用（指定値による解決と claude 以外の採用）: 別のウィンドウ（`rex window new <名前> --focus=false`）に hermes の `--tui` と cursor-agent のペインを用意し、ブロックにラベルを付けた（`rex block rename`）。`tabs` の `label`（ウィンドウ名）から `tab_id` を引き、`list` の `tab_id` が一致する2ペインへ展開できた。`list` の `label`（ブロックのラベル）と `tab_id` の直接指定でも解決できた。cursor-agent のペイン（`commands` は `/…/cursor-agent --use-system-ca …`）は CLI 名を一意に解決でき、入力待ちの確認（約 9 秒）のあと、別ウィンドウのまま委譲・承認待ちの裁定（2回）・push の到達・回収まで成立した。hermes のペインは `commands` が Python の起動行で、CLI 名を解決できなかった。表示していないウィンドウのペインは 80×24 だった。
+
+2026-11-11 実測（hermes の `--tui` の承認ダイアログと、codex・agy・grok のペインの採用。指揮者 = Rex のペイン内の Claude Code 2.1.322 / claude-fable-5-2。委譲先 = Hermes Agent 0.23.1 / openai-codex:gpt-5.6-luna〔`--tui`〕、codex-cli 0.167.1 / gpt-6.1-sol high、agy 1.5.5 / gemini-3.8-flash-high、grok 1.0.77 / grok-4.7。各1回の試行）:
+
+- hermes の承認の仕組み: 既定の設定（`approvals.mode` が `smart`）では、承認対象のコマンドを補助の LLM が先に判定し、安全と判定したものはダイアログを出さずに実行する（hermes のソースとログで確認）。前回の実測で `--tui` が `chmod 777` と `find … -delete` を無確認で実行したのは、この自動承認による。前回の `--cli` の2回目の `chmod 777` も自動承認されており、そこへ送った `answer "1"` はプロンプトとして送信された。承認対象かどうかは `hermes approvals test -- <コマンド>` で実行せずに判定できる。
+- hermes の `--tui` の承認ダイアログ: `chmod -R 777 <成果物置き場のフォルダ>` を2回依頼し、2回ともダイアログ（`⚠ approval required · <規則名>`）が出た。選択肢は回によって違った — 1回目は3択（`1` Allow once ／ `2` Deny ／ `3` No, and tell Hermes what to do instead）、2回目は5択（`1` Allow once ／ `2` Allow this session ／ `3` Always allow ／ `4` Deny ／ `5` No, and tell Hermes what to do instead）。補助の LLM が拒否と判定したときは3択、判定を保留したときは5択になる（ソースで確認）。数字キーは Enter なしで確定する（`1-3 quick pick`）。1回目に `mux.sh key <ペインID> 2` で拒否（コマンドは実行されず、入力待ちに戻った）、2回目に `mux.sh key <ペインID> 1` で許可した（実行された）。申告は無い。表示中はステータス行の顔文字と動詞が約3秒ごとに変わり、`--until` なしの `agent-wait`（`MUX_REX_QUIET_MS=8000`、90 秒）はタイムアウトした。`mux.sh wait-output <ペインID> "approval required" 60000` は成立した。
+- codex・agy・grok のペインの採用: 別のウィンドウに3種を起動してブロックにラベルを付け、既存ペインとみなして採用した。`list` の `commands` は `codex --sandbox …`・`agy --model …`・`grok --cwd …` の形で、3種とも CLI 名を一意に解決できた。入力待ちの確認（`MUX_REX_QUIET_MS=8000` の `agent-wait --until idle` を 20 秒）は、3種とも申告（`rex-program-status`）で即時に成立した。別ウィンドウのまま委譲し、3種とも受理（`working`）・報告ファイル・push の到達・回収が成立した。codex と grok は承認待ちなしで完了した。agy は `blocked` を3回申告し（`pwd`・報告ファイルの作成・push）、`answer "1"` で1件ずつ許可した。
