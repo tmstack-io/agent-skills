@@ -20,11 +20,23 @@ cursor-agent --trust --auto-review --workspace '<プロジェクトルート>'
 - エージェント名 `cursor`。`agent_session` を報告する — 受理完了の判定は ../SKILL.md の「タスクの委譲」手順2の本則（working ＋ `agent_session`）に従う。
 - ツール活動（ファイル編集・シェル実行）は差分付きでペインに表示され、観戦できる（表示されるのはツール活動と回答の出力であり、モデル内部の推論過程ではない）。
 
+## 承認ダイアログ（`--auto-review` を付けない起動）
+
+`--auto-review` を付けずに起動すると、シェル実行のたびに承認の枠が出る（2026.11.10 実測、Rex バックエンド）。無人運用では起動コマンドのとおり `--auto-review` を付ける。本節は、付けずに起動されたペインを採用した場合の裁定手順である。
+
+- **形**: `Run this command?` の下に、`Run (once) (y)` ／ `Add Shell(<コマンド>) to allowlist? (tab)` ／ `Run Everything (shift+tab)` ／ `Skip … (esc or n)` が並ぶ。ファイルの書き込みは承認なしで行われる。
+- **状態の申告は無い**（Rex で実測）: 承認待ちは blocked として報告されない。表示中の画面は静止するため、画面静止推定の安全網は発火する。画面を読んで見分ける。
+- **許可**: `mux.sh key <ペインID> y` で1件ずつ許可する。allowlist への追加（tab）と `Run Everything`（shift+tab）は選ばない。
+- **拒否**: `mux.sh key <ペインID> n` のあと `mux.sh key <ペインID> Enter`（代わりの指示の入力欄を空のまま送る）で `Rejected` になる。拒否しても、同じコマンドを形を変えて再び求めることがある（実測: `date` → `/bin/date`）。再要求も同じ基準で裁く。
+- 裁定の基準は ../SKILL.md「指揮者裁定」に従う。
+
 ## 固有の注意
 
-- ハーネス自身による push（通信規約のコマンド実行）は auto-review の裁定次第で承認待ちになり得る（未検証）。pull 安全網での回収を必須とし、push はあれば早いという扱いにする。
+- ハーネス自身による push（通信規約のコマンド実行）は auto-review の裁定次第で承認待ちになり得る（`--auto-review` 付きの起動では、push は承認待ちなしで到達した — 2026.11.10、Rex バックエンドで1回）。pull 安全網での回収を必須とし、push はあれば早いという扱いにする。
 
 ## 検証記録
+
+2026-11-11 実測（cursor-agent 2026.11.10-731fb78 / composer-2.5、Rex バックエンド、指揮者 = Claude Code）: `--auto-review` 付きの起動での往復委譲と push の到達 / `--auto-review` なしの起動での承認の枠の形と裁定（許可2回、拒否1回と再要求）/ 別ウィンドウの既存ペインとしての採用。Rex では状態を申告しない。詳細は `../backends/rex.md` の実測記録。
 
 2026-09-15 実測（指揮者 = Claude Code、herdr バックエンド。`mux.sh submit` の導入検証、ADR 0015）: `--trust` 起動 / `submit` 1 回で送信（送信エコーと返答 OK を回収）/ `close` の消滅確認。
 
