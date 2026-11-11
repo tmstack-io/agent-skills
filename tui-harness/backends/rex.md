@@ -18,9 +18,11 @@ Rex のペインの中で herdr を動かし、その herdr のペインに指�
 
 - **`--until idle`** は、申告が `idle` または `done` のときに成立する（ターンを終えたハーネスは `done` のまま次の入力を待つ。Codex は次の入力で `idle` に変わる）。
 - **`--until` なし**（pull 安全網）は `idle` / `done` / `blocked` / `error` のいずれかで発火する。`error` で発火したら、SKILL.md「応答の受け取り」の三分類の「done / idle なのに push が無い」と同じ手順で、回答/報告ファイルと画面から結果の回収を試みる。
-- **申告しないハーネス**: hermes は状態を申告しない（cursor-agent は未計測）。申告の無いペインで意味を持つ `--until` は `working` と `idle` だけである — `--until done` / `--until blocked` は使わず、`--until` なしで発火させて三分類が画面から裁く。
+- **申告しないハーネス**: hermes と cursor-agent は状態を申告しない。申告の無いペインで意味を持つ `--until` は `working` と `idle` だけである — `--until done` / `--until blocked` は使わず、`--until` なしで発火させて三分類が画面から裁く。
 - **起動時の確認ダイアログ**: claude と codex は、起動時の確認ダイアログ（フォルダやフックの信頼確認）を表示している間は何も申告しない。agy と grok は `blocked` を申告する。初期ダイアログの通過は、SKILL.md「ペインの起動」の `<初期ダイアログ手順>`（`mux.sh wait-output` による文言の確定待ち）のまま行う。
 - ハーネスのプロセスが終了すると、`working` と `blocked` の申告は消え、`done` と `error` の申告は残る。
+- **`error` のあと**: ターンがエラーで終わったハーネス（モデルの誤指定・利用枠の上限等）は、入力欄を表示していても `error` を申告したままで、`--until idle` は成立しない。`error` の申告には `msg`（エラーの文面）が付くことがあり、原因の特定には `mux.sh read` の画面とあわせて使える。
+- **バックグラウンド実行中の `done`**: claude は、シェルコマンドをバックグラウンドで走らせてその完了を待っている間も `done` を申告し、完了すると自分でターンを再開する（`working` → `done`）。この間は `--until idle` も `--until` なしも成立する。安全網が `done` で発火したのに push も回答/報告ファイルも無い場合は、`mux.sh read` の画面にバックグラウンド実行の待ち（`Waiting for … background` や、ステータス行の `1 shell` 等）が無いかを確かめ、あれば SKILL.md「応答の受け取り」の「まだ作業中」として扱う。
 
 ## (2) 受理判定
 
@@ -28,7 +30,7 @@ Rex のペインの中で herdr を動かし、その herdr のペインに指�
 
 ## (3) list のフィールドと既存ペインの起用の読み替え
 
-`list` の各ペインは `agent` / `agent_status` を持たず、代わりに `commands`（ブロックの子プロセスと前面プロセスのコマンドライン）を持つ。ペインのタイトル（`terminal_title_stripped`）も持たず、`existing-pane.md` 手順1の指定値の照合では代わりに `label`（ブロックのラベル）を使う。`list` が返すのは自セッションのペインだけなので、同手順の「全ワークスペースへ広げる」照合と「ワークスペース跨ぎの確認」は発生しない。`scroll.viewport_rows` も持たないため、SKILL.md「応答の受け取り」の画面読みの行数規則の初期値は 200 とし、倍化と 1000 行の上限はそのまま適用する。`existing-pane.md` の手順1〜3は次のとおり読み替える — 候補列挙（手順1）は `commands` のいずれかにカタログ CLI 名が現れるペインを対象にし、起用ゲートと CLI の確定（手順2・3）は `commands` から**一意に**解決できたカタログ CLI 名で行う（0件・複数のカタログ CLI 名が現れた場合は採用せず、照合結果を散文提示で示す）。idle の確認は `agent-wait --until idle` の短時間実行（例: `MUX_REX_QUIET_MS=8000` で 20 秒）が成功することで代替する。
+`list` の各ペインは `agent` / `agent_status` を持たず、代わりに `commands`（ブロックの子プロセスと前面プロセスのコマンドライン）を持つ。ペインのタイトル（`terminal_title_stripped`）も持たず、`existing-pane.md` 手順1の指定値の照合では代わりに `label`（ブロックのラベル）を使う。`list` が返すのは自セッションのペインだけなので、同手順の「全ワークスペースへ広げる」照合と「ワークスペース跨ぎの確認」は発生しない。`scroll.viewport_rows` も持たないため、SKILL.md「応答の受け取り」の画面読みの行数規則の初期値は 200 とし、倍化と 1000 行の上限はそのまま適用する。`existing-pane.md` の手順1〜3は次のとおり読み替える — 候補列挙（手順1）は、`commands` のいずれかの行の先頭の語（実行ファイル）のファイル名がカタログ CLI 名と一致するペインを対象にし、指揮者ペイン（`self` の `pane_id`）は候補から除く（指揮者自身のペインも、指揮者のハーネスの CLI 名で一致するため）。照合を先頭の語のファイル名に限るのは、引数のパス（例: `--cwd` の値）に別の CLI 名が含まれうるためである。起用ゲートと CLI の確定（手順2・3）は `commands` から**一意に**解決できたカタログ CLI 名で行う（0件・複数のカタログ CLI 名が現れた場合は採用せず、照合結果を散文提示で示す）。idle の確認は `agent-wait --until idle` の短時間実行（例: `MUX_REX_QUIET_MS=8000` で 20 秒）が成功することで代替する。
 
 ## (4) tabs / layout
 
@@ -58,7 +60,7 @@ Rex でも直送委譲（`direct.md`）を適用してよい。ただし、代�
 
 Rex での実測範囲: 下記の実測記録に挙げた項目に限る。
 
-未実測: agy・grok・hermes での往復委譲の一巡、claude・codex・grok の作業中の承認待ち（`blocked`）の申告、`error` の申告、既存ペインの起用（`existing-pane.md`）の Rex での代替判定、hermes への直送委譲、cursor-agent（未ログインのため。状態の申告・貼り付けモードとも未計測）、実際のハーネスがレコードを複数持つ場合の状態の読み方（ルートのレコードだけを読む実装の妥当性）。
+未実測: hermes での往復委譲の一巡と直送委譲、cursor-agent の承認待ち（申告しないため画面から裁く場面）、既存ペインの起用のうち、指定値（`label`・`tab_id`）による解決と、claude 以外のハーネスの採用。
 
 2026-11-10 実測（実測者 = Claude Code。Rex のペインの外から rex CLI をフルパスで操作。各1回の試行）:
 
@@ -131,3 +133,33 @@ Rex での実測範囲: 下記の実測記録に挙げた項目に限る。
 - claude の初回の返答（ブリーフは `READY` と書くよう指示）は、画面上で `RE1` と読めた（`rex capture --format=vt` でも同じ）。以後の返答に文字の欠けは無く、原因は特定していない。
 - 直送上限を超える返答（claude）: 直送上限 3,000 文字のもとで 4,000 文字以上の返答を求めると、claude は `report-1.md` を書き、`[<push ラベル>] done <パス>` の push が指揮者の入力欄に届いた。
 - 作業中の承認待ち（副次観測。agy）: agy がシェル実行の承認ダイアログ（"Run this command?"、選択肢 `1. Yes, run command` / `2.` 会話内で常に許可 / `3.` 設定へ永続化 / `4. No, cancel`）で止まると、`blocked`（`kind` は `permission`、`msg` に対象コマンド）を申告し、`--until` なしの `agent-wait` が `blocked`・`rex-program-status` で発火した。`answer "4"` で拒否すると、agy はターンを中断して `idle` を申告した。承認ダイアログの表示中に送った `submit` は終了コード 3 で失敗した。
+
+2026-11-11 実測（未実測だった項目の確認。指揮者 = Rex のペイン内の Claude Code 2.1.322 / claude-fable-5-2。委譲先 = grok 1.0.77 / grok-4.7、agy 1.5.5 / gemini-3.8-flash-high、cursor-agent 2026.09.18-9a7762b / composer-2.5、Claude Code 2.1.322 / claude-sonnet-5、codex-cli 0.167.1 / gpt-6.1-sol high。各1回の試行）:
+
+- 往復委譲の一巡（起動・受理・完了の検知・push の到達・回収・クローズ）:
+
+  | 項目 | grok | agy | cursor-agent |
+  |---|---|---|---|
+  | 初期ダイアログ | なし（trust 済み） | なし（trust 済み） | なし（`--trust`） |
+  | 受理（`agent-wait --until working`） | 成立・`rex-program-status` | 成立・`rex-program-status` | 成立・`rex-quiescence` |
+  | 完了の検知（`--until` なし） | `done`・`rex-program-status` | 承認待ちのたびに `blocked`、最後に `done` | `idle`・`rex-quiescence` |
+  | 委譲先自身による push | 無確認で実行され、届いた | 承認ダイアログを許可すると届いた | 無確認で実行され、届いた |
+  | 回収・クローズ | 成立 | 成立 | 成立 |
+
+- cursor-agent は起動時・作業中・完了後のいずれも状態を申告しなかった（`program_status` の `records` が空）。入力待ちで貼り付けモードは有効で、3行の貼り付けは3行のまま入力欄に入り、Enter で1回の送信になった。通常の画面（`primary`）で描く。
+- 作業中の承認待ちの申告と裁定:
+
+  | ハーネス | 起動条件 | 申告（`kind` は `permission`） | 裁定 |
+  |---|---|---|---|
+  | claude | `--permission-mode default`（承認待ちを出すため。transports の起動コマンドは `auto`） | `blocked`。`msg` は `approve Write: <パス>` / `approve Bash: <コマンド全文>` | `answer "1"` で許可し、続行した |
+  | codex | `-c approvals_reviewer=user`（同上。transports の起動コマンドは `auto_review`） | `blocked`。`msg` は無い | `answer "1"` で許可し、続行した |
+  | agy | transports の起動コマンド | `blocked`。`msg` は `Approve RunCommand: <コマンド>` / `Approve WriteFile: Write: <パス>`（長いと末尾が切れる） | `answer "1"` で許可（3回）。前回の実測で `answer "4"` の拒否も確認済み |
+  | grok | `--permission-mode default`（承認待ちを出すため。transports の起動コマンドでは、起動時のモードが `auto-review` になり承認待ちが出なかった） | `blocked`。`msg` は `Set t.txt permissions to 600`（シェル。コマンドの要約）/ `Allow Edit to <パス>?`（ファイル編集）。既定のモードでも、`mkdir`・リダイレクトでの書き込み・`rm -r`・`curl` は承認待ちを出さず、`chmod` とファイル編集ツールで出た | シェルは `answer "3"`（Yes, proceed）で許可し、続行した。ファイル編集は `answer "4"`（No, reject）で拒否し、ファイルは変更されず、申告は `idle` になった |
+
+  grok の行は、利用枠の回復後に同日あらためて測った（grok 1.0.77 / grok-4.7、1回の試行）。grok 1.0.77 の承認ダイアログの選択肢は、シェルが5択（`1` always-approve ／ `2` Always allow: <コマンド> ／ `3` Yes, proceed ／ `4` No, reject ／ `5` Never allow）、ファイル編集が4択（`1` always-approve ／ `2` このセッションの編集をすべて許可 ／ `3` Yes ／ `4` No, reject）で、`transports/grok-tui.md` の3択（0.2.114 実測）と番号が違う。裁定の前に画面で番号を確かめる。
+
+  いずれも `--until` なしの `agent-wait` が `blocked`・`rex-program-status` で発火した。`msg` は長いと切れるため、裁定の前に `mux.sh read` で対象の全文を確かめる（`arbitration.md` のとおり）。
+- `error` の申告: 存在しないモデル名で起動した claude と codex は、最初のターンで `error` を申告した（claude は `msg` にエラーの文面あり、codex は `msg` なし）。grok は無料枠の上限に達したターンで `error`（`msg` に上限到達の文面）を申告した。3種とも `--until` なしの `agent-wait` が `error`・`rex-program-status` で発火した。claude と grok はターンが `working` を経ずに `error` になり、`agent-wait --until working` はタイムアウトした。`error` のあとの `--until idle` は成立しなかった（claude で確認）。
+- レコードを複数持つ場合: claude がサブエージェントを1つ動かしている間、`program_status` はルートのレコード（`working`）と、`id` つきのレコード（サブエージェント。`working`）の2件を返し、サブエージェントの終了で `id` つきのレコードは消えた。ルートのレコードだけを読む実装で、ハーネス全体の状態を正しく読めた。
+- バックグラウンド実行中の申告: claude に `sleep 40` を依頼すると、claude はコマンドをバックグラウンドで起動してターンを終え、`done` を申告した。約 40 秒後に自分でターンを再開し（`working`）、返答して `done` に戻った。
+- 既存ペインの起用: 指揮者が起動していた claude のペイン（往復委譲を1回終えたあと）を、対応表に無い既存ペインとみなして採用した。`list` の `commands` には、claude・codex・agy・grok が `<CLI名> <引数>` の形で、cursor-agent が `/…/cursor-agent <引数>` の形で現れ、先頭の語のファイル名で5種とも一意に CLI 名を解決できた。指揮者自身のペインも `claude` として現れた。入力待ちの確認（`MUX_REX_QUIET_MS=8000` の `agent-wait --until idle` を 20 秒）は、申告のある claude のペインでは即時に、申告の無い cursor-agent のペインでは約 9 秒で成立した。採用後の委譲は、受理・承認待ちの裁定（2回）・push の到達・回収まで成立した。
