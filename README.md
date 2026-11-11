@@ -61,7 +61,7 @@ npx skills add tmstack-io/agent-skills --skill plainify   # 単体指定
 | t3-harness | T3 Code（Claude Code や codex 等のハーネスを GUI から駆動するホスト）の委譲ツールで別 provider のモデル（codex / claude）へ作業を委譲し、結果を回収する基盤（利用スキルが Read して適用。単発利用なし・T3 Code 上でのみ成立・手動確認手順は `tests/t3-harness/`） |
 | tandem | 実行エージェントが著者として課題を進めながら、ハーネス1ペインを相談役に立て、指摘・意見の往復を収束（LGTM）まで中継する二人三脚協働（TUI マルチプレクサ環境専用。相談では異系統を推奨・`--pane` で稼働中の既存ペインを採用可・`--direct` で初回ブリーフ以後の追問をペインへ直接送る直送モード・`--invoke` で依頼文に名指しした明示起動スキルをペインで代理実行する代理実行型） |
 | to-chat | 会話の内容を Slack・Teams・Google Chat に貼り付ける投稿文にまとめる（plainify で読者適応・既定はどのチャットでも崩れないチャット共通記法。`--for <読者>` で読者指定、`--plain` でプレーンテキスト、`--table` で表を許可。投稿はユーザーが行う） |
-| tui-harness | TUI マルチプレクサのペインで他 LLM ハーネス（codex / cursor-agent / agy / claude / grok / hermes）を起動・委譲・回収する基盤（`mux.sh` / `catalog.sh` / モデル系統の照合 / ハーネス別 transports。現行バックエンド herdr / cmux） |
+| tui-harness | TUI マルチプレクサのペインで他 LLM ハーネス（codex / cursor-agent / agy / claude / grok / hermes）を起動・委譲・回収する基盤（`mux.sh` / `catalog.sh` / モデル系統の照合 / ハーネス別 transports。現行バックエンド herdr / cmux / Rex） |
 
 ## スキル間の依存
 

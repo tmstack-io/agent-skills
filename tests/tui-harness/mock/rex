@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# mux.sh 回帰検証用の rex モック（ブロック p1 のみ）。画面は $MOCK_DIR/screen、送信キーは $MOCK_DIR/keys に記録する。
+D=$MOCK_DIR
+[ "$1" = "--autostart=false" ] && shift
+case "$1 $2" in
+  "whoami --json") echo '{"session_id":"s1","window_id":"w1","block_id":"p0"}' ;;
+  "block ls") echo '{"blocks":[{"block_id":"p1","label":"mock","window_id":"w1"}]}' ;;
+  "block call") # block call -s s1 -b p1 <メソッド>（メソッドは最後の引数）
+    case "${@: -1}" in
+      process) echo '{}' ;;
+      program_status) echo '{"records":[]}' ;;
+      *) echo "rex モック: 未対応 $*" >&2; exit 9 ;;
+    esac ;;
+  "api call") # api call -s s1 block.event -（要求の JSON は標準入力。貼り付けの本文を取り出して描く）
+    text=$(python3 -c 'import json, sys; print(json.load(sys.stdin)["event"]["payload"]["text"], end="")')
+    [ "${MOCK_MODE:-}" = drop ] || python3 "$(dirname "$0")/render.py" "$D/screen" "$text" ;;
+  "capture -s") cat "$D/screen" ;;
+  "send -s") # send -s s1 -b p1 -- <テキスト>（テキストは最後の引数）
+    [ "${MOCK_MODE:-}" = drop ] || python3 "$(dirname "$0")/render.py" "$D/screen" "${@: -1}" ;;
+  "send-key -s") echo "${@: -1}" >> "$D/keys"; echo "● working" >> "$D/screen" ;;
+  *) echo "rex モック: 未対応 $*" >&2; exit 9 ;;
+esac

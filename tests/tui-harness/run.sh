@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# tui-harness/mux.sh の入力出現確認（submit / cmux の run）の回帰検証。
-# herdr / cmux のモック（mock/）を PATH の先頭に置き、実際の mux.sh の経路を通して
+# tui-harness/mux.sh の入力出現確認（submit / cmux と rex の run）とバックエンド判定順の回帰検証。
+# herdr / cmux / rex のモック（mock/）を PATH の先頭に置き、実際の mux.sh の経路を通して
 # 終了コードと Enter 送信の有無を確かめる。要 bash・perl・python3。
 #
 # 使い方: bash tests/tui-harness/run.sh [検証対象 mux.sh のパス]
@@ -27,20 +27,22 @@ SHORT_MULTI=$(for i in 1 2 3 4 5 6 7 8 9; do printf 'line%s body\n' "$i"; done; 
 LAUNCH="cd '/home/example/projects/sample-app' && some-harness --model example-model"
 
 # check <バックエンド> <サブコマンド> <名前> <期待終了コード> <期待 Enter（有/無）> <MOCK_MODE> <MOCK_WIDTH> <テキスト> [事前画面]
-# Enter 有 = 送信キーの記録が Enter だけ（herdr は Enter、cmux は enter）で1件以上、無 = 記録なし。
+# Enter 有 = 送信キーの記録が Enter だけ（herdr は Enter、cmux は enter、rex は submit が Enter・
+# run が enter）で1件以上、無 = 記録なし。
 # それ以外のキーが記録されていれば「他キー」として不合格にする。
 check() {
   local backend=$1 sub=$2 name=$3 want_rc=$4 want_enter=$5 rc enter enter_key=Enter
   [ "$backend" = cmux ] && enter_key=enter
+  [ "$backend $sub" = "rex run" ] && enter_key=enter
   export MOCK_DIR MOCK_MODE=$6 MOCK_WIDTH=$7
   MOCK_DIR=$(mktemp -d) || { echo "mktemp に失敗" >&2; exit 1; }
   printf '%s' "${9:-}" > "$MOCK_DIR/screen"
   : > "$MOCK_DIR/keys"
-  if [ "$backend" = herdr ]; then
-    HERDR_ENV=1 "$MUX" "$sub" p1 "$8" >/dev/null 2>&1; rc=$?
-  else
-    HERDR_ENV=0 CMUX_SOCKET_PATH=mock "$MUX" "$sub" p1 "$8" >/dev/null 2>&1; rc=$?
-  fi
+  case "$backend" in
+    herdr) HERDR_ENV=1 CMUX_SOCKET_PATH= REX_BLOCK= "$MUX" "$sub" p1 "$8" >/dev/null 2>&1; rc=$? ;;
+    cmux) HERDR_ENV=0 CMUX_SOCKET_PATH=mock REX_BLOCK= "$MUX" "$sub" p1 "$8" >/dev/null 2>&1; rc=$? ;;
+    rex) HERDR_ENV=0 CMUX_SOCKET_PATH= REX_BLOCK=p0 REX_SESSION=s1 "$MUX" "$sub" p1 "$8" >/dev/null 2>&1; rc=$? ;;
+  esac
   if [ ! -s "$MOCK_DIR/keys" ]; then
     enter=無
   elif grep -v -x -F -- "$enter_key" "$MOCK_DIR/keys" >/dev/null; then
@@ -57,7 +59,23 @@ check() {
   fi
 }
 
-for b in herdr cmux; do
+# check_detect <名前> <期待出力> <HERDR_ENV> <CMUX_SOCKET_PATH> <REX_BLOCK>
+# 複数のバックエンドが見える環境で、rex が先に選ばれることを確かめる。
+check_detect() {
+  local got
+  got=$(HERDR_ENV=$3 CMUX_SOCKET_PATH=$4 REX_BLOCK=$5 REX_SESSION=s1 "$MUX" detect 2>/dev/null)
+  if [ "$got" = "$2" ]; then
+    echo "PASS [detect] $1 ($got)"
+  else
+    echo "FAIL [detect] $1 (出力=$got, 期待=$2)"
+    fail=1
+  fi
+}
+check_detect "3つとも見えるなら rex"      backend=rex   1 mock p0
+check_detect "herdr だけなら herdr"       backend=herdr 1 ""   ""
+check_detect "どれも見えなければ出力なし" ""            0 ""   ""
+
+for b in herdr cmux rex; do
   check $b submit "空白位置での折り返し"         0 有 word   60 "$LONG"
   check $b submit "単語・パス途中の折り返し"     0 有 hard   20 "$LONG"
   check $b submit "折り返しなしの短い入力"       0 有 word   60 "hello"
@@ -73,10 +91,13 @@ for b in herdr cmux; do
   check $b submit "貼り付けが畳み表示で入る"     0 有 collapse 60 "$MULTI"
   check $b submit "畳み表示が増えない"           3 無 drop   60 "$SHORT_MULTI" $'❯ [Pasted Content 10 chars]\n'
   check $b submit "前の畳み表示が残る中で畳み入力" 0 有 collapse 60 "$SHORT_MULTI" $'⏺ [Pasted text #1 +3 lines]\n'
+  check $b submit "行数だけの畳み表示で入る"     0 有 collapse-lines 200 "$MULTI"
 
   check $b submit "先頭がハイフンの入力が届かない" 3 無 drop 60 "--help" $'❯ unrelated\n'
   check $b submit "探針が perl コード風で届かない" 3 無 drop 60 '-e;BEGIN{print qq(EXECUTED);exit 0}' $'❯ unrelated\n'
 done
 check cmux run "シェル入力行で途中折り返し" 0 有 shell 20 "$LAUNCH" $'$ \n'
 check cmux run "コマンド文字列が届かない"   1 無 drop  20 "$LAUNCH" $'$ \n'
+check rex run "シェル入力行で途中折り返し"  0 有 shell 20 "$LAUNCH" $'$ \n'
+check rex run "コマンド文字列が届かない"    1 無 drop  20 "$LAUNCH" $'$ \n'
 exit $fail

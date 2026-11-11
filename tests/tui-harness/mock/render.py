@@ -5,7 +5,8 @@
 2 桁インデント）/ shell（幅で切る、インデントなし。シェルの入力行）/ squash（空白を消して 1 行）/
 box（hard と同じ折り返しで、各行を枠線 │ で囲む）/ headonly（hard と同じ折り返しで、先頭 5 行だけ
 描く。取り込みが途中で止まった入力欄）/ collapse（貼り付けを [Pasted Content N chars] の 1 行に
-畳んで描く）
+畳んで描く）/ collapse-lines（貼り付けを [[ 先頭.. [N lines] .. 末尾 ]] の 1 行に畳んで描く。
+末尾は 28 文字だけ見せる）
 複数行のテキストは改行ごとに区切り、2 行目以降を継続行として折り返す。
 環境変数 MOCK_WIDTH: 1 行の幅（既定 60）
 """
@@ -20,6 +21,9 @@ if mode == "squash":
     text = text.replace(" ", "")
 if mode == "collapse":
     text = f"[Pasted Content {len(text)} chars]"
+if mode == "collapse-lines":
+    n = text.count("\n") + 1
+    text = f"[[ {text[:16]}.. [{n} lines] .. {text[-28:]} ]]".replace("\n", " ")
 out = []
 for k, line in enumerate(text.split("\n")):
     line = (prompt if k == 0 else indent) + line

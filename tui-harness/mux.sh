@@ -5,7 +5,9 @@
 #
 # バックエンド: herdr（0.7 系コマンド形・検証済み）と cmux（0.64 系・検証済み。要 python3。
 # ペイン ID = surface UUID。agent-wait は画面静止推定＋通知高速経路で代替し、agent_session は
-# 報告しない。詳細は backends/cmux.md）。tmux は未検証のため
+# 報告しない。詳細は backends/cmux.md）と Rex（要 python3。ペイン ID = ブロック ID。agent-wait は
+# ハーネスが Rex へ申告した状態を読み、申告が無い間は画面静止推定で代替する。agent_session は
+# 報告しない。詳細は backends/rex.md）。tmux は未検証のため
 # 未対応（detect が検出した場合は stderr に表示だけする）。
 #
 # 使い方:
@@ -31,7 +33,7 @@
 #   mux.sh send <ペインID> <テキスト>            … テキストを打鍵で送る（Enter は送らない）
 #   mux.sh paste <ペインID> <テキスト>           … テキストを1回の貼り付けとして送る（Enter は
 #       送らない。複数行・長文を入力欄へ入れる経路。cmux の send は改行を Enter として打鍵し、
-#       長文の打鍵は途中で止まるため、submit はこちらを使う）
+#       長文の打鍵は途中で止まるため、submit はこちらを使う。Rex は block.event の paste で送る）
 #   mux.sh key <ペインID> <キー名>               … キーを送る（例: Enter, y, Down）
 #   mux.sh read <ペインID> [--scrollback] [--lines <N>]
 #       画面を読む。--scrollback は折り返し前の履歴ソース（alt-screen 描画の
@@ -63,6 +65,15 @@
 set -u -o pipefail
 
 detect_backend() {
+  if [ -n "${REX_BLOCK:-}" ] && [ -n "${REX_SESSION:-}" ] && command -v rex >/dev/null 2>&1 \
+     && rex --autostart=false whoami --json 2>/dev/null | grep -q '"block_id"'; then
+    if ! command -v python3 >/dev/null 2>&1; then
+      echo "rex: 検出したが python3 が無いため未対応（Rex バックエンドの JSON 処理が python3 を必要とする。導入例: brew install python3）" >&2
+      return 1
+    fi
+    echo rex
+    return 0
+  fi
   if [ "${HERDR_ENV:-}" = "1" ] && command -v herdr >/dev/null 2>&1; then
     echo herdr
     return 0
@@ -77,7 +88,7 @@ detect_backend() {
   fi
   command -v cmux >/dev/null 2>&1 && echo "cmux: CLI は存在するが cmux セッション内でない（CMUX_SOCKET_PATH 未設定または socket 不通）ため未対応" >&2
   command -v tmux >/dev/null 2>&1 && echo "tmux: 検出したが未検証のため未対応" >&2
-  echo "検証済みの TUI マルチプレクサが無い（対応: herdr / cmux）" >&2
+  echo "検証済みの TUI マルチプレクサが無い（対応: herdr / cmux / Rex）" >&2
   return 1
 }
 
@@ -87,7 +98,15 @@ extract_pane_id() {
 
 # 対象ペイン ID の存在確認（ID はペインの増減で振り直されるため、古い ID への送信を止める）。
 require_pane() { # <ペインID> <サブコマンド名>
-  "$0" list 2>/dev/null | grep -E -q "\"pane_id\":[[:space:]]*\"$1\"" \
+  case "$BACKEND" in
+    # Rex の list はプロセス情報の取得に ps を使う。ps はサンドボックス内（codex の
+    # workspace-write で実測）では実行できず、委譲先からの push が通らなくなるため、
+    # 存在確認はブロック一覧だけで行う。
+    rex) rex block ls -s "$REX_SESSION" --json 2>/dev/null | python3 -c '
+import json, sys
+sys.exit(0 if any(b["block_id"] == sys.argv[1] for b in json.load(sys.stdin)["blocks"]) else 1)' "$1" 2>/dev/null ;;
+    *) "$0" list 2>/dev/null | grep -E -q "\"pane_id\":[[:space:]]*\"$1\"" ;;
+  esac \
     || { echo "$2: ペインが存在しない: $1（mux.sh list で ID を取り直す）" >&2; exit 1; }
 }
 
@@ -105,9 +124,10 @@ probe_of() {
 }
 
 # 貼り付けの畳み表示（claude: [Pasted text #1 +67 lines] / codex: [Pasted Content 3133 chars] /
-# grok: [Pasted: 68 lines]。cmux の貼り付けで実測）の可視画面上の個数。
+# grok: [Pasted: 68 lines]。cmux の貼り付けで実測。hermes: [[ 先頭.. [37 lines] .. 末尾 ]]。Rex の
+# 貼り付けで実測）の、画面の読み取り範囲（末尾 40 行）にある個数。
 paste_marks_of() { # <ペインID>
-  "$0" read "$1" --lines 40 2>/dev/null | perl -CS -0777 -ne 'my $n = () = /\[Pasted[^\]\n]*\]/g; print $n'
+  "$0" read "$1" --lines 40 2>/dev/null | perl -CS -0777 -ne 'my $n = () = /\[Pasted[^\]\n]*\]|\[\d+ lines\]/g; print $n'
 }
 
 # 送信テキストの出現待ちのタイムアウト（ms）: 6 秒＋1 文字あたり 20ms。長文の貼り付けを
@@ -155,10 +175,22 @@ fi
 
 BACKEND=$(detect_backend) || exit 1
 
-# エージェント状態（herdr のみ。cmux は状態 API が無いため空文字）。
+# Rex の program_status の応答（stdin）から、ルートのレコード（id が空）の状態を取り出す。
+# ルートのレコードが無ければ空文字（申告なし）。
+rex_state() {
+  python3 -c '
+import json, sys
+root = [r for r in json.load(sys.stdin).get("records", []) if not r.get("id")]
+print(root[-1]["state"] if root else "")'
+}
+
+# エージェント状態（herdr と Rex。cmux は状態 API が無いため空文字。Rex は申告が無ければ空文字）。
 agent_status_of() {
-  [ "$BACKEND" = herdr ] || { echo ""; return 0; }
-  herdr agent get "$1" 2>/dev/null | sed -n 's/.*"agent_status":"\([a-z]*\)".*/\1/p'
+  case "$BACKEND" in
+    herdr) herdr agent get "$1" 2>/dev/null | sed -n 's/.*"agent_status":"\([a-z]*\)".*/\1/p' ;;
+    rex) rex block call -s "$REX_SESSION" -b "$1" program_status 2>/dev/null | rex_state 2>/dev/null || echo "" ;;
+    *) echo "" ;;
+  esac
 }
 
 case "$cmd" in
@@ -551,6 +583,223 @@ print(json.dumps({"result": {"tabs": [{"tab_id": w["id"], "label": name(w), "wor
         [ -n "${CMUX_WORKSPACE_ID:-}" ] \
           || { echo "layout: CMUX_WORKSPACE_ID が未設定のため自ワークスペースを特定できない（cmux 端末内での実行が前提）" >&2; exit 1; }
         cmux list-panes --workspace "$CMUX_WORKSPACE_ID" --json
+        ;;
+      *)
+        echo "不明なサブコマンド: $cmd" >&2
+        exit 2
+        ;;
+    esac
+    ;;
+  rex)
+    # Rex バックエンド（要 python3）。ペイン = Rex のブロック、タブ = ウィンドウ、ワークスペース =
+    # セッション。ブロック ID は増減で振り直されない。対象は自セッション（REX_SESSION）に限る。
+    # 読み替えの正本は backends/rex.md。
+    S=$REX_SESSION
+    # ペインの画面と履歴の末尾 N 行（rex capture は画面と履歴の全体を返し、行数指定を持たない）。
+    rex_tail() { # <ペインID> <行数> [capture の追加オプション...]
+      local pane=$1 lines=$2; shift 2
+      rex capture -s "$S" -b "$pane" --trim "$@" | tail -n "$lines"
+    }
+    case "$cmd" in
+      split)
+        [ $# -eq 2 ] || { echo "usage: mux.sh split <対象ペインID> <right|down>" >&2; exit 2; }
+        case "$2" in
+          right) dir=right ;;
+          down) dir=below ;;
+          *) echo "split: 方向は right または down: $2" >&2; exit 2 ;;
+        esac
+        out=$(rex split -s "$S" -b "$1" --split="$dir" --focus=false --json) || exit 1
+        pane=$(printf '%s' "$out" | python3 -c 'import json,sys; print(json.load(sys.stdin)["block_ids"][0])') \
+          || { echo "split の応答から新ペインの ID を取得できない: $out" >&2; exit 1; }
+        echo "$pane"
+        ;;
+      run)
+        # ペインのシェルへコマンド文字列を書き込み、入力行への出現を確認してから Enter を送る。
+        [ $# -eq 2 ] || { echo "usage: mux.sh run <ペインID> <コマンド文字列>" >&2; exit 2; }
+        require_pane "$1" run
+        rex send -s "$S" -b "$1" -- "$2" >/dev/null || exit 1
+        wait_echo "$1" "$(probe_of "$2")" 10000 \
+          || { echo "run: コマンド文字列がペインの画面に現れない: $1" >&2; exit 1; }
+        sleep 1
+        rex send-key -s "$S" -b "$1" enter >/dev/null
+        ;;
+      send)
+        # rex send は打鍵ではなくバイト列をそのまま書き込む（改行は Enter ではなく LF として届く）。
+        [ $# -eq 2 ] || { echo "usage: mux.sh send <ペインID> <テキスト>" >&2; exit 2; }
+        require_pane "$1" send
+        rex send -s "$S" -b "$1" -- "$2" >/dev/null
+        ;;
+      paste)
+        # 1回の貼り付けとして送る（rex send には貼り付けの指定が無いため block.event の paste を使う）。
+        # 相手が bracketed paste を有効にしていれば、複数行も1回の貼り付けとして入力欄に入る。
+        # 要求全体の上限が約 64KiB のため、ASCII 以外を \uXXXX に変換せず UTF-8 のまま送る
+        # （変換すると日本語は1文字 6 バイトになり、約 1 万文字で上限に達する。実測）。
+        [ $# -eq 2 ] || { echo "usage: mux.sh paste <ペインID> <テキスト>" >&2; exit 2; }
+        require_pane "$1" paste
+        python3 -c 'import json, sys
+print(json.dumps({"block_id": sys.argv[1], "event": {"type": "paste", "payload": {"text": sys.argv[2]}}}, ensure_ascii=False))' "$1" "$2" \
+          | rex api call -s "$S" block.event - >/dev/null
+        ;;
+      key)
+        [ $# -eq 2 ] || { echo "usage: mux.sh key <ペインID> <キー名>" >&2; exit 2; }
+        require_pane "$1" key
+        rex send-key -s "$S" -b "$1" "$2" >/dev/null
+        ;;
+      read)
+        [ $# -ge 1 ] || { echo "usage: mux.sh read <ペインID> [--scrollback] [--lines <N>]" >&2; exit 2; }
+        pane=$1; shift
+        unwrap=() lines=20
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            --scrollback) unwrap=(--unwrap); shift ;;
+            --lines) lines=$2; shift 2 ;;
+            *) echo "read: 不明なオプション: $1" >&2; exit 2 ;;
+          esac
+        done
+        rex_tail "$pane" "$lines" ${unwrap[@]+"${unwrap[@]}"}
+        ;;
+      wait-output)
+        # herdr の --match と同じリテラル部分一致（バックエンド間で意味を揃える）。
+        [ $# -eq 3 ] || { echo "usage: mux.sh wait-output <ペインID> <文字列> <タイムアウトms>" >&2; exit 2; }
+        pane=$1 pattern=$2 timeout_ms=$3
+        deadline=$(( $(date +%s) + (timeout_ms + 999) / 1000 ))
+        while :; do
+          screen=$(rex_tail "$pane" 80 2>/dev/null) \
+            || { echo "wait-output: 画面の読み取りに失敗: $pane" >&2; exit 1; }
+          printf '%s' "$screen" | grep -F -q -- "$pattern" && exit 0
+          [ "$(date +%s)" -ge "$deadline" ] && { echo "wait-output: タイムアウト (${timeout_ms}ms)" >&2; exit 1; }
+          sleep 1
+        done
+        ;;
+      agent-wait)
+        # ハーネスが Rex へ申告した状態を読む。申告が無い間は画面静止推定で代替する
+        # （--until の意味と申告しないハーネスの正本は backends/rex.md）。
+        [ $# -ge 2 ] || { echo "usage: mux.sh agent-wait <ペインID> [--until <状態>] <タイムアウトms>" >&2; exit 2; }
+        pane=$1; shift
+        until_state=""
+        if [ "$1" = "--until" ]; then until_state=$2; shift 2; fi
+        [ $# -eq 1 ] || { echo "usage: mux.sh agent-wait <ペインID> [--until <状態>] <タイムアウトms>" >&2; exit 2; }
+        case "$until_state" in
+          ""|idle|working|done|blocked) : ;;
+          *) echo "agent-wait: 不明な状態: $until_state" >&2; exit 2 ;;
+        esac
+        timeout_ms=$1
+        quiet_s=$(( (${MUX_REX_QUIET_MS:-15000} + 999) / 1000 ))
+        start=$(date +%s)
+        deadline=$(( start + (timeout_ms + 999) / 1000 ))
+        last_change=$start prev="" first=1 changed=0
+        emit() { printf '{"result":{"agent":{"agent_status":"%s","pane_id":"%s","source":"%s"},"type":"agent_info"}}\n' "$1" "$pane" "$2"; }
+        while :; do
+          now=$(date +%s)
+          status=$(rex block call -s "$S" -b "$pane" program_status 2>/dev/null) \
+            || { echo "agent-wait: 状態の読み取りに失敗: $pane" >&2; exit 1; }
+          state=$(printf '%s' "$status" | rex_state) || exit 1
+          if [ -n "$state" ]; then
+            # --until idle は、ターンを終えて入力を待つ done でも成立させる（完了後に idle へ
+            # 戻らず done のまま次の入力を待つハーネスがある）。
+            case "$until_state:$state" in
+              :idle|:done|:blocked|:error|idle:idle|idle:done|working:working|done:done|blocked:blocked)
+                emit "$state" rex-program-status; exit 0 ;;
+            esac
+            first=1 changed=0
+          else
+            screen=$(rex_tail "$pane" 80 2>/dev/null) \
+              || { echo "agent-wait: 画面の読み取りに失敗: $pane" >&2; exit 1; }
+            if [ "$first" = 1 ]; then
+              prev=$screen first=0 last_change=$now
+            elif [ "$screen" != "$prev" ]; then
+              prev=$screen last_change=$now changed=1
+            fi
+            case "$until_state" in
+              working) [ "$changed" = 1 ] && { emit working rex-quiescence; exit 0; } ;;
+              ""|idle) [ $(( now - last_change )) -ge "$quiet_s" ] && { emit idle rex-quiescence; exit 0; } ;;
+            esac
+          fi
+          [ "$now" -ge "$deadline" ] && { echo "agent-wait: タイムアウト (${timeout_ms}ms)" >&2; exit 1; }
+          if [ "$until_state" = "working" ]; then sleep 1; else sleep 2; fi
+        done
+        ;;
+      close)
+        # 消滅を確認してから戻る（他バックエンドと同じ保証）。
+        [ $# -eq 1 ] || { echo "usage: mux.sh close <ペインID>" >&2; exit 2; }
+        require_pane "$1" close
+        rex block close -s "$S" "$1" >/dev/null || exit 1
+        for _ in 1 2 3 4 5 6; do
+          "$0" list 2>/dev/null | grep -F -q "\"pane_id\": \"$1\"" || exit 0
+          sleep 1
+        done
+        echo "close: ペインの消滅を確認できない: $1" >&2
+        exit 1
+        ;;
+      self)
+        # rex whoami が、実行元のブロック・ウィンドウ・セッションを返す。
+        rex --autostart=false whoami --json | python3 -c '
+import json, sys
+me = json.load(sys.stdin)
+print(json.dumps({"result": {"pane": {"pane_id": me["block_id"], "tab_id": me["window_id"],
+                                      "workspace_id": me["session_id"]}, "type": "pane_current"}}))'
+        ;;
+      list)
+        python3 - <<'PY'
+import json, os, subprocess, sys
+S = os.environ["REX_SESSION"]
+def rex(*args):
+    return subprocess.run(["rex", *args], capture_output=True, text=True)
+r = rex("block", "ls", "-s", S, "--json")
+if r.returncode != 0:
+    sys.stderr.write(r.stderr); sys.exit(1)
+panes = []
+for b in json.loads(r.stdout)["blocks"]:
+    # ブロックで動くプロセスのコマンドライン（既存ペインの起用での CLI 判定の材料）。
+    # process を持たないブロックと、一覧の取得後に閉じたブロックは空にする。
+    p = rex("block", "call", "-s", S, "-b", b["block_id"], "process")
+    proc = json.loads(p.stdout) if p.returncode == 0 else {}
+    fg = proc.get("foreground") or {}
+    pids = [str(x["pid"]) for x in (proc.get("child"), fg) if x and x.get("pid")]
+    commands = []
+    if pids:
+        ps = subprocess.run(["ps", "-o", "command=", "-p", ",".join(dict.fromkeys(pids))],
+                            capture_output=True, text=True)
+        commands = [line.strip() for line in ps.stdout.splitlines() if line.strip()]
+    panes.append({"pane_id": b["block_id"], "label": b.get("label") or "", "tab_id": b.get("window_id"),
+                  "workspace_id": S, "cwd": fg.get("cwd"), "commands": commands})
+print(json.dumps({"result": {"panes": panes, "type": "pane_list"}}, ensure_ascii=False))
+PY
+        ;;
+      tabs)
+        rex window ls -s "$S" --json | python3 -c '
+import json, sys
+v = json.load(sys.stdin)
+print(json.dumps({"result": {"tabs": [{"tab_id": w["window_id"], "label": w.get("label") or "",
+                                       "workspace_id": v["session_id"]} for w in v["windows"]],
+                             "type": "tab_list"}}, ensure_ascii=False))'
+        ;;
+      layout)
+        # 自ペインの属するウィンドウの各ペインを返す。Rex のレイアウトは割合（frame）でしか
+        # 取れないため、セル数（rect の width / height）はペインごとの size で補う。
+        python3 - <<'PY'
+import json, os, subprocess, sys
+S = os.environ["REX_SESSION"]
+def rex(*args):
+    r = subprocess.run(["rex", *args], capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.stderr.write(r.stderr); sys.exit(1)
+    return json.loads(r.stdout)
+me = rex("--autostart=false", "whoami", "--json")
+panes = []
+def walk(node):
+    if "block_id" in node:
+        size = rex("block", "call", "-s", S, "-b", node["block_id"], "size")
+        x, y, w, h = node["rect"]
+        panes.append({"pane_id": node["block_id"],
+                      "rect": {"width": size["columns"], "height": size["rows"]},
+                      "frame": {"x": x, "y": y, "width": w, "height": h}})
+    elif "split" in node:
+        walk(node["split"]["before"]); walk(node["split"]["after"])
+for layer in rex("window", "inspect", "-s", S, me["window_id"], "--json").get("layers", []):
+    walk(layer.get("layout") or {})
+print(json.dumps({"result": {"layout": {"tab_id": me["window_id"], "panes": panes}, "type": "pane_layout"}}))
+PY
         ;;
       *)
         echo "不明なサブコマンド: $cmd" >&2
