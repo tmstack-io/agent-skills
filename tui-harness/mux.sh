@@ -118,6 +118,13 @@ normalize_screen() {
   perl -CS -pe 's/[\x{2800}-\x{28FF}0-9]//g'
 }
 
+# 画面静止推定の比較用に画面を正規化する: 数字と点字スピナーを除き、空白の連続を1つに畳む。
+# 入力待ちの間もステータス行の経過時間を更新し続ける TUI（実測: hermes）があり、そのままの
+# 比較では静止が成立しないため（桁数の変化で動く桁揃えの空白も畳む）。
+quiescence_screen() {
+  normalize_screen | perl -CS -pe 's/[ \t]+/ /g'
+}
+
 # 送信テキストの出現確認に使う探針: 末尾の空白を除いた本文の末尾 40 文字（文字単位。バイト切りで
 # UTF-8 を壊さない）。入力欄は長い本文の末尾（カーソル位置）を表示するため、先頭行は画面外へ
 # 押し出されうるが末尾は残る。取り込みの遅い TUI では末尾の出現が取り込み完了の印にもなる。
@@ -705,7 +712,7 @@ print(json.dumps({"block_id": sys.argv[1], "event": {"type": "paste", "payload":
             esac
             first=1 changed=0
           else
-            screen=$(rex_tail "$pane" 80 2>/dev/null) \
+            screen=$(rex_tail "$pane" 80 2>/dev/null | quiescence_screen) \
               || { echo "agent-wait: 画面の読み取りに失敗: $pane" >&2; exit 1; }
             if [ "$first" = 1 ]; then
               prev=$screen first=0 last_change=$now
