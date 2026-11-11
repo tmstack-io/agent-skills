@@ -9,6 +9,8 @@
 # ハーネスが Rex へ申告した状態を読み、申告が無い間は画面静止推定で代替する。agent_session は
 # 報告しない。詳細は backends/rex.md）。tmux は未検証のため
 # 未対応（detect が検出した場合は stderr に表示だけする）。
+# 複数のバックエンドが見える場合は、ターミナルと一体のマルチプレクサ（Rex / cmux）を、
+# その上で動く herdr より先に選ぶ（判定順: rex → cmux → herdr）。
 #
 # 使い方:
 #   mux.sh detect
@@ -74,16 +76,16 @@ detect_backend() {
     echo rex
     return 0
   fi
-  if [ "${HERDR_ENV:-}" = "1" ] && command -v herdr >/dev/null 2>&1; then
-    echo herdr
-    return 0
-  fi
   if [ -n "${CMUX_SOCKET_PATH:-}" ] && command -v cmux >/dev/null 2>&1 && cmux ping >/dev/null 2>&1; then
     if ! command -v python3 >/dev/null 2>&1; then
       echo "cmux: 検出したが python3 が無いため未対応（cmux バックエンドの split / agent-wait / list / tabs が python3 を必要とする。導入例: brew install python3）" >&2
       return 1
     fi
     echo cmux
+    return 0
+  fi
+  if [ "${HERDR_ENV:-}" = "1" ] && command -v herdr >/dev/null 2>&1; then
+    echo herdr
     return 0
   fi
   command -v cmux >/dev/null 2>&1 && echo "cmux: CLI は存在するが cmux セッション内でない（CMUX_SOCKET_PATH 未設定または socket 不通）ため未対応" >&2

@@ -60,7 +60,7 @@ check() {
 }
 
 # check_detect <名前> <期待出力> <HERDR_ENV> <CMUX_SOCKET_PATH> <REX_BLOCK>
-# 複数のバックエンドが見える環境で、rex が先に選ばれることを確かめる。
+# 複数のバックエンドが見える環境で、判定順（rex → cmux → herdr）どおりに選ばれることを確かめる。
 check_detect() {
   local got
   got=$(HERDR_ENV=$3 CMUX_SOCKET_PATH=$4 REX_BLOCK=$5 REX_SESSION=s1 "$MUX" detect 2>/dev/null)
@@ -72,6 +72,7 @@ check_detect() {
   fi
 }
 check_detect "3つとも見えるなら rex"      backend=rex   1 mock p0
+check_detect "cmux と herdr なら cmux"    backend=cmux  1 mock ""
 check_detect "herdr だけなら herdr"       backend=herdr 1 ""   ""
 check_detect "どれも見えなければ出力なし" ""            0 ""   ""
 
