@@ -16,12 +16,23 @@ done
 
 ### Claude Code 以外のハーネス（codex / grok 等・シンボリックリンク運用）
 
-Claude Code 以外のハーネスは、ハーネス横断の標準配置 `~/.agents/skills/` を参照する。ここに張れば codex / grok 等が共通で読める:
+Claude Code 以外のハーネスは、Antigravity を除き、ハーネス横断の標準配置 `~/.agents/skills/` を参照する。ここに張れば codex / grok 等が共通で読める:
 
 ```sh
 cd <クローン先のパス>
 for s in "$PWD"/*/; do
   [ -f "${s}SKILL.md" ] && ln -s "${s%/}" ~/.agents/skills/"$(basename "$s")"
+done
+```
+
+### Antigravity（agy・シンボリックリンク運用）
+
+Antigravity（`agy`）は `~/.agents/skills/` を読まず、`~/.gemini/skills/` を読む。Antigravity で使う場合はこちらに張る:
+
+```sh
+cd <クローン先のパス>
+for s in "$PWD"/*/; do
+  [ -f "${s}SKILL.md" ] && ln -s "${s%/}" ~/.gemini/skills/"$(basename "$s")"
 done
 ```
 
