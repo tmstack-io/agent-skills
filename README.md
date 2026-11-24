@@ -27,12 +27,13 @@ done
 
 ### Antigravity（agy・シンボリックリンク運用）
 
-Antigravity（`agy`）は `~/.agents/skills/` を読まず、`~/.gemini/skills/` を読む。Antigravity で使う場合はこちらに張る:
+Antigravity（`agy`）は `~/.agents/skills/` を読まず、`~/.gemini/config/skills/` を読む（`npx skills` の Antigravity 向けインストール先と同じ）。Antigravity で使う場合はこちらに張る。`~/.gemini/skills/` に張ったスキルは、`~/.gemini/config/skills/` にスキルが入ると読まれなくなる:
 
 ```sh
 cd <クローン先のパス>
+mkdir -p ~/.gemini/config/skills
 for s in "$PWD"/*/; do
-  [ -f "${s}SKILL.md" ] && ln -s "${s%/}" ~/.gemini/skills/"$(basename "$s")"
+  [ -f "${s}SKILL.md" ] && ln -s "${s%/}" ~/.gemini/config/skills/"$(basename "$s")"
 done
 ```
 
